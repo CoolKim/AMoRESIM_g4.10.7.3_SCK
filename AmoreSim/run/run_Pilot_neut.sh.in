@@ -1,0 +1,67 @@
+#!/bin/bash -f
+
+source @ROOT_BINARY_DIR@/thisroot.sh
+source @Geant4_INCLUDE_DIR@/../../bin/geant4.sh
+workdir="@AMORESIM_WORK_DIR@"
+
+if [ "x$1" = "x" ]; then
+  if [ "x$SGE_TASK_ID" = "x" ]; then
+    echo "WRONG CONFIGURATION"
+    exit
+  else
+    runid=`expr $SGE_TASK_ID - 1`
+  fi
+else
+  runid=$1
+fi
+
+export CupDATA=$workdir"/CupSim/data"
+export AmoreDATA=$workdir"/AmoreSim/data"
+
+cd $workdir
+
+# path to muon flux data
+pathmf="@NEUTRON_PATH@"
+mfname="NeutSpectrum_dist3500_run"$runid
+
+# number of events (will be setted automatically)
+#set nevt = 800
+
+# detector setup
+setup="neut"
+
+# run name
+jobname="@AMORESIM_JOB_NAME@"
+
+# output directory (must contain mac log root directory)
+outdir="@SIMOUT_PATH@"
+
+# ===================================================
+
+exe=$workdir/AmoreSim/amoresim
+
+mufilepath="$pathmf/$mfname"
+evtwc=`wc -l $mufilepath | cut -d' ' -f1`
+nevt=`expr $evtwc / 2`
+
+outpath=$outdir/$jobname
+
+rout="$outpath/root"
+output="$rout/amorepilot_$setup-run$runid"
+
+mac=$outpath"/mac/amorepilot-"$setup"_"$runid"_"$nevt".mac"
+log=$outpath"/log/amorepilot-"$setup"_"$runid"_"$nevt".txt"
+
+timeseed=`date +%s%N | cut -b10-17`
+
+if [ -e $mac ]
+then
+  rm -f $mac
+fi
+
+/bin/sed -e s#NEUTPATH#$mufilepath#g -e s#OUTPUT#$output#g -e s#NEVENTS#$nevt#g -e s#SEED#$timeseed#g $workdir/AmoreSim/mac/Pilot_neutbckg.mac > $mac
+
+$exe $mac &> $log
+#$exe $mac &> /dev/null
+
+exit

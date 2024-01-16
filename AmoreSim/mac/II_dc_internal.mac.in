@@ -1,0 +1,199 @@
+#######################
+## Hadronic processes
+#######################
+/cupdebug/cupparam omit_hadronic_processes  1.0
+/cupdebug/cupparam omit_neutron_hp  1.0
+
+####################
+## Select Detector
+####################
+/detector/select AmoreDetector
+
+#############################
+## Select Detector Geometry
+#############################
+/detGeometry/select amore200
+/detGeometry/NeutronMode true
+/detGeometry/AdditionalPE true
+
+/detGeometry/200/selectPhase AMoRE200_Phase1
+/detGeometry/200/selectVeto @AMORESIM_VETO_CONF@
+/detGeometry/200/selectCavern ToyHemiSphere
+
+/detGeometry/Pilot/EnableMumetal false
+/detGeometry/Pilot/EnableTargetRoom true
+
+/detGeometry/I/EnableSuperCMagneticShield true
+/detGeometry/I/EnableCrystalArray true
+
+/detGeometry/EnableOrigGeom true
+/detGeometry/EnableScint true
+/detGeometry/EnableGantry true
+/detGeometry/EnableInnerDet true
+/detGeometry/EnableInnermost true
+/detGeometry/EnableNeutronShield true
+
+/detGeometry/nShieldingToyConf RealConf
+
+####################
+## Set Ntuple Contents (On/Off) default:0
+####################
+/ntuple/primary 1
+/ntuple/track 1
+/ntuple/step 1
+/ntuple/photon 0
+/ntuple/scint 0
+
+/ntuple/recordWithCut false
+/ntuple/recordPrimaries false
+
+###################
+## Set cut values
+###################
+#/Cup/phys/CutsAll 0.1 mm
+/Cup/phys/DetectorCuts 0.001 mm
+
+######################
+## Select EM process
+######################
+/Cup/phys/Physics livermore
+#/Cup/phys/Physics emstandardNR
+#/Cup/phys/Physics amorephysicsOp
+
+########################
+## verboseLevel option
+########################
+/run/verbose 0
+/event/verbose 0
+/control/verbose 0
+/tracking/verbose 0
+/tracking/storeTrajectory 0
+
+###############
+## Initialize
+###############
+/run/initialize
+
+#####################
+## Output Root File
+#####################
+/event/output_file OUTPUT
+
+#####################################
+## Splits events that exceed window
+#####################################
+/process/activate DeferTrackProc
+#/process/inactivate DeferTrackProc
+
+############################
+## Scintillation processes
+############################
+#/cupscint/on
+/cupscint/off
+#/process/activate Cerenkov
+/process/inactivate Cerenkov
+
+#############################
+## Co60 Simulation
+#############################
+#/grdm/nucleusLimits 60 60 27 27
+
+##########################
+## Scintillation Verbose
+##########################
+/cupscint/verbose 1
+
+####################
+## PMTOpticalModel
+####################
+#/PMTOpticalModel/verbose 1
+#/PMTOpticalModel/luxlevel 3
+
+#################
+## Process list
+#################
+/process/list
+
+######################
+## EM process Option
+######################
+/process/em/deexcitation crystals true true true
+/process/em/fluo true
+/process/em/auger true
+/process/em/pixe true
+
+############################
+## RadioactiveDecay Option
+############################
+#/grdm/applyICM false
+#/grdm/applyARM false
+
+####################
+## Debug messenger
+####################
+#/cupdebug/dumpmat
+#/cupdebug/dumpgeom
+#/cupdebug/cupparam_dump
+
+
+#########################
+## How to set particles
+#########################
+############################################################################################################
+## (1) source test											   #
+#Primary event generator: use user controlled particle gun, number 3, which uses vtx #17, pos #9	   #
+#/generator/event_window 1000 (default: 1000ns)								   #
+#/generator/rates 3 1 (default: 1 Hz)									   #
+#/generator/pos/set index "x y z" (fixed position of the point in mm)					   #
+#/generator/pos/set index "x y z fill [physicalVolumeName]" (positions uniformly filling a physical volume)#
+#/generator/pos/set 9 "400 0 0 fill GammaCatcherInteriorPhys"						   #
+#/generator/vtx/set index "particle_name dirx diry dirz kineticEnergyMeV [polx poly polz] 		   #
+#/generator/vtx/set 17 "Th232 0 0 0  0" (Thorium 232 nuclei at rest)					   #
+#													   #
+## (2) events from external event generator								   #
+#Use the "spare hepevt" generator, number 38, which uses vtx#18 and pos#10 				   #
+#Tell the generator to merge/split events separated by less/more than 1e7 ns 				   #
+#/generator/event_window 1e7										   #
+#/generator/rates 38 1.0										   #
+#/generator/vtx/set 18 "/users/ejjeon/work/reno/reno_v2.0.4/MockSim/gen/Co60.dat"			   #
+#/generator/vtx/set 18 "/users/ejjeon/work/reno/reno_v2.0.4/MockSim/gen/trivial_co60_gammas |"		   #
+############################################################################################################
+
+##############################################################################################
+## Radioactive source: Th232 (1 per 1E11 years ~0.3E-18 Bq (each nucleus has time to decay))
+##############################################################################################
+/generator/event_window EVENTWINDOW
+/generator/rates 3 DECAYRATE
+/generator/disablePileup true
+/event/primary/enablePrimarySkew false
+
+################
+## Source test
+################
+
+## For pos setup: internal
+#/generator/pos/set 9 "0 0 460. fill lsveto NaI"
+#/generator/pos/set 9 "0 50. 1500. fill physTargetRoom CaMoO4"
+#/generator/pos/set 9 "0 0. 1730. paint physCMOCell4 -0.02"
+
+#/generator/pos/set 9 "0 680 -1000. fill BoricAcid_PV BoricAcidRubber" # inner boric acid rubber
+#/generator/pos/set 9 "0 963 -1000. fill shieldBoricAcid_PV BoricAcidRubber" #outer boric acid rubber
+/generator/pos/set 9 "0 2495 1500. fill HatBoricAcid_PV BoricAcidRubber" #hat boric acid rubber
+
+## For vtx setup
+/generator/vtx/set 17 "PART ELEVEL 0 0 0  0"
+
+## For Double beta decay
+#/generator/pos/set 10 "0 50. 1640. fill physTargetRoom CaMoO4"
+#/generator/rates 38 1.0E-24
+#/generator/vtx/set 18 "/home/daehoon/CupWork/test_gen/bin/Linux3.10-GCC_4_8/decay0mod NEVENTS|"
+
+#########
+## Seed
+#########
+/cupdebug/setseed SEED
+
+########
+## Run
+########
+/run/beamOn NEVENTS

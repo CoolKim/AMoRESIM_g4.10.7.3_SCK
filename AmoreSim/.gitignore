@@ -1,0 +1,14 @@
+*txt
+!CMakeLists.txt
+!conanfile.txt
+*root
+*so
+*heprep
+**/shlib/
+**/tmp/
+**/bin/
+.#*
+BHW*
+
+build/
+computer_identifier.h

@@ -1,0 +1,3 @@
+#!/bin/bash
+
+export ROOT_INCLUDE_PATH=@CONAN_INCLUDE_DIRS_MCOBJS@

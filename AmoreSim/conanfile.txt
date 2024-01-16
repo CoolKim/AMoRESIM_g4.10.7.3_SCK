@@ -1,0 +1,9 @@
+[requires]
+CupSim/0.1@basehw/alpha
+MCObjs/0.1@basehw/alpha
+
+[generators]
+cmake
+
+[imports]
+bin, amoresim -> ./tttto

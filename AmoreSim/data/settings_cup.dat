@@ -1,0 +1,38 @@
+################################################################
+# This is an input file for GLG4param.
+# It consists of simple indentifier/floating point value pairs, one to a line.
+# Lines beginning with "#" are ignored; blank lines are also ignored.
+# Anything after the identifier/value pair on a line is ignored.
+################################################################
+# Note: the following geometry parameters should only be changed immediately
+# prior to a geometry build or re-build.
+################################################################
+# flags
+
+# values -- lengths in millimeters
+#tunnel_arch_radius		5000
+tunnel_arch_radius		8000
+pit_depth                       7500
+pit_radius                      3750
+rock_shell_thickness 		10000     # min thickness of rock around cavern
+
+outer_veto_tank_height		7000
+outer_veto_tank_radius		3500
+outer_veto_tank_thickness	  15
+
+buffer_tank_height		5600
+buffer_tank_radius		2750
+buffer_tank_thickness	  	   4
+
+gamma_catcher_vessel_height	4000
+gamma_catcher_vessel_radius	1800
+gamma_catcher_vessel_thickness	   8  # ???? swapped with target ????
+
+target_vessel_height		2800
+target_vessel_radius		1200
+target_vessel_thickness		  12  # ???? swapped with gamma_catcher ????
+
+PMT_rotation_factor_for_amore_OD  0  # 0 == no tilt, 1.0 == full tilt
+
+# calibration "fishline"
+fishline_top_z       2.8e3         # dist from center of tank to top of line

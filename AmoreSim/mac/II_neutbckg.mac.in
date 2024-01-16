@@ -1,0 +1,119 @@
+#######################
+## Hadronic processes
+#######################
+/cupdebug/cupparam omit_hadronic_processes 0.0
+
+####################
+## Select Detector
+####################
+/detector/select AmoreDetector
+
+#############################
+## Select Detector Geometry
+#############################
+/detGeometry/select amore200
+/detGeometry/NeutronMode true
+/detGeometry/AdditionalPE true
+
+/detGeometry/200/selectVeto WithBeam
+/detGeometry/200/selectCavern ToyHemiSphere
+
+#/detGeometry/Pilot/EnableMumetal false
+#/detGeometry/Pilot/EnableTargetRoom true
+
+#/detGeometry/I/EnableSuperCMagneticShield true
+#/detGeometry/I/EnableCrystalArray true
+
+/detGeometry/EnableOrigGeom true
+/detGeometry/EnableScint true
+/detGeometry/EnableGantry true
+/detGeometry/EnableInnerDet true
+/detGeometry/EnableInnermost true
+/detGeometry/EnableNeutronShield true
+
+#/detGeometry/nShieldingToyConf RealConf
+
+####################
+## Set Ntuple Contents (On/Off) default:0
+####################
+/ntuple/primary 1
+/ntuple/track 1
+/ntuple/step 1
+/ntuple/muon 0
+/ntuple/photon 0
+/ntuple/scint 0
+
+/ntuple/recordWithCut false
+/ntuple/recordPrimaries false
+
+###################
+## Set cut values
+###################
+#/Cup/phys/CutsAll 0.1 mm
+#!#/Cup/phys/DetectorCuts 0.001 mm
+
+########################
+## verboseLevel option
+########################
+/run/verbose 0
+/event/verbose 0
+#/control/verbose 1
+/control/verbose 0
+#/tracking/verbose 2
+/tracking/verbose 0
+/tracking/storeTrajectory 0
+
+###############
+## Initialize
+###############
+/run/initialize
+
+#####################
+## Output Root File
+#####################
+/event/output_file OUTPUT
+
+##########################
+## Scintillation Verbose
+##########################
+#!#/cupscint/verbose 0
+
+####################
+## PMTOpticalModel
+####################
+#/PMTOpticalModel/verbose 1
+#/PMTOpticalModel/verbose 0
+#/PMTOpticalModel/luxlevel 3
+
+############################
+## RadioactiveDecay Option
+############################
+#/grdm/applyICM false
+#/grdm/applyARM false
+
+####################
+## Debug messenger
+####################
+#/cupdebug/dumpmat
+/cupdebug/dumpgeom
+#/cupdebug/cupparam_dump
+
+
+/generator/event_window 1e8
+/generator/rates 38 1.0
+/generator/disablePileup true
+/generator/vtx/set 18 NEUTPATH
+
+/event/primary/enablePrimarySkew false
+
+#########
+## Seed
+#########
+/cupdebug/setseed SEED
+
+
+#/tracking/verbose 2
+########
+## Run
+########
+/run/beamOn NEVENTS

@@ -1,0 +1,92 @@
+#!/bin/bash -f
+
+source @ROOT_BINARY_DIR@/thisroot.sh
+source @Geant4_INCLUDE_DIR@/../../bin/geant4.sh
+workdir="@AMORESIM_WORK_DIR@"
+
+if [ "x$1" = "x" ]; then
+  if [ "x$SGE_TASK_ID" = "x" ]; then
+    echo "WRONG CONFIGURATION"
+    exit
+  else
+    runid=`expr $SGE_TASK_ID - 1`
+    nowbin="bin6"
+    maxevt="all"
+  fi
+else
+    if [ "x$2" = "x" ]; then
+        runid=$1
+        nowbin="bin6"
+        maxevt="all"
+    else
+        if [ "x$3" = "x" ]; then
+            nowbin=$1
+            runid=$2
+            maxevt="all"
+        else
+            nowbin=$1
+            maxevt=$2
+            runid=$3
+        fi
+    fi
+fi
+
+export CupDATA=$workdir"/CupSim/data"
+export AmoreDATA=$workdir"/AmoreSim/data"
+
+cd $workdir
+
+# path to muon flux data
+pathmf="@NEUTRON_PATH@/$nowbin"
+mfname="NeutSpectrum_dist6000_run"$runid
+
+# number of events (will be setted automatically)
+#set nevt = 800
+
+# detector setup
+setup="neut"
+
+# run name
+#jobname="@AMORESIM_JOB_NAME@"
+jobname="neut"
+
+# output directory (must contain mac log root directory)
+outdir="@SIMOUT_PATH@"
+
+# ===================================================
+
+exe=$workdir/AmoreSim/amoresim
+
+mufilepath="$pathmf/$mfname"
+evtwc=`wc -l $mufilepath | cut -d' ' -f1`
+
+if [ $maxevt = "all" ]; then
+    nevt=`expr $evtwc / 2`
+else
+    nevt=$maxevt
+fi
+
+outpath=$outdir/$jobname
+
+rout="$outpath/root"
+output=$rout"/amore2_"$setup"-run"$runid"_"$nevt
+
+mac=$outpath"/mac/amore2-"$setup"_"$runid"_"$nevt".mac"
+log=$outpath"/log/amore2-"$setup"_"$runid"_"$nevt".txt"
+
+timeseed=`date +%s%N | cut -b10-17`
+
+if [ -e $mac ]
+then
+    rm -f $mac
+fi
+
+/bin/sed -e s#NEUTPATH#$mufilepath#g -e s#OUTPUT#$output#g -e s#NEVENTS#$nevt#g -e s#SEED#$timeseed#g $workdir/AmoreSim/mac/II_neutbckg.mac > $mac
+
+if [ $runid -lt 1000 ] ; then
+    $exe $mac &> $log
+else
+    $exe $mac &> /dev/null
+fi
+
+exit

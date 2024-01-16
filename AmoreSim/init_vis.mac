@@ -1,0 +1,50 @@
+# Macro file for the initialization of example B2
+# in interactive session
+#
+# Set some default verbose
+#/control/verbose 2
+#/control/saveHistory
+/tracking/verbose 1
+#/run/verbose 2
+
+/detector/select AmoreDetector
+/detGeometry/select amore200
+#/detGeometry/select amoreI
+
+/detGeometry/DebugMode true
+/detGeometry/OverlapCheck true
+/detGeometry/NeutronMode false
+/detGeometry/RockgammaMode false
+/detGeometry/AdditionalPE true
+/detGeometry/200/selectPhase AMoRE200_Phase1
+/detGeometry/200/selectVeto WithBeam
+/detGeometry/200/selectCavern Real_ARF #ToyHemiSphere
+
+/detGeometry/Pilot/EnableMumetal false
+/detGeometry/Pilot/EnableTargetRoom true
+
+/detGeometry/I/EnableSuperCMagneticShield true
+/detGeometry/I/EnableCrystalArray true
+
+/detGeometry/EnableOrigGeom true
+/detGeometry/EnableScint true
+/detGeometry/EnableGantry true
+/detGeometry/EnableInnerDet true
+/detGeometry/EnableInnermost true
+/detGeometry/EnableNeutronShield true
+
+/detGeometry/nShieldingToyConf PE20cm
+
+/ntuple/recordWithCut false
+
+# Change the default number of threads (in multi-threaded mode)
+#/run/numberOfThreads 4
+#
+# Initialize kernel
+/run/initialize
+
+/event/output_file vis_output
+
+#
+# Visualization setting
+/control/execute vis.mac

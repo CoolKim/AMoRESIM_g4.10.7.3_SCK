@@ -1,0 +1,83 @@
+#!/bin/bash -f
+
+source @ROOT_BINARY_DIR@/thisroot.sh
+source @Geant4_INCLUDE_DIR@/../../bin/geant4.sh
+workdir="@AMORESIM_WORK_DIR@"
+
+export CupDATA=$workdir"/CupSim/data"
+export AmoreDATA=$workdir"/AmoreSim/data"
+
+cd $workdir
+
+# detector setup
+setup=neut
+
+# run name
+if [ "x$1" = "x" ]; then
+    jobname="@AMORESIM_JOB_NAME@"
+else
+    jobname="@AMORESIM_JOB_NAME@/$1"
+fi
+
+# output directory (must contain mac log root directory)
+outdir="@SIMOUT_PATH@"
+
+# ===================================================
+
+exe=$workdir/AmoreSim/amoresim
+outpath=$outdir/$jobname
+
+# settings for horizontal geometry validation
+hlog=$outpath"/log/amoreI-"$setup"_GV_H.txt"
+hmac=$outpath"/mac/amoreI-"$setup"_GV_H.mac"
+hrout=$outpath"/root/amoreI-"$setup"_GV_H"
+prim_pos_x=0.1
+prim_pos_y=0
+prim_pos_z=2001
+prim_dir_x=0
+prim_dir_y=1
+prim_dir_z=0
+prim_skew="true"
+
+if [ -e $hmac ]
+then
+  rm -f $hmac
+fi
+
+/bin/sed -e s#ROOT_OUT__#$hrout#g -e s#DETGEOM__#amoreI#g -e s#NMODE__#true#g -e s#PRIMPOSX__#$prim_pos_x#g -e s#PRIMPOSY__#$prim_pos_y#g -e s#PRIMPOSZ__#$prim_pos_z#g -e s#PRIMDIRX__#$prim_dir_x#g -e s#PRIMDIRY__#$prim_dir_y#g -e s#PRIMDIRZ__#$prim_dir_z#g -e s#PRIMSKEW__#$prim_skew#g $workdir"/AmoreSim/mac/geom_validation.mac" > $hmac
+
+# settings for vertical geometry validation
+vlog=$outpath"/log/amoreI-"$setup"_GV_V.txt"
+vmac=$outpath"/mac/amoreI-"$setup"_GV_V.mac"
+vrout=$outpath"/root/amoreI-"$setup"_GV_V"
+prim_pos_x=-39
+prim_pos_y=-42.5
+prim_pos_z=0
+prim_dir_x=0
+prim_dir_y=0
+prim_dir_z=1
+prim_skew="true"
+
+if [ -e $vmac ]
+then
+  rm -f $vmac
+fi
+
+/bin/sed -e s#ROOT_OUT__#$vrout#g -e s#DETGEOM__#amoreI#g -e s#NMODE__#true#g -e s#PRIMPOSX__#$prim_pos_x#g -e s#PRIMPOSY__#$prim_pos_y#g -e s#PRIMPOSZ__#$prim_pos_z#g -e s#PRIMDIRX__#$prim_dir_x#g -e s#PRIMDIRY__#$prim_dir_y#g -e s#PRIMDIRZ__#$prim_dir_z#g -e s#PRIMSKEW__#$prim_skew#g $workdir"/AmoreSim/mac/geom_validation.mac" > $vmac
+
+# geometry vaildation execution stage
+
+echo "Horizontal orientation validation"
+echo $hmac
+echo $hlog
+echo $hrout
+$exe $hmac &> $hlog &
+
+echo "Vertical orientation validation"
+echo $vmac
+echo $vlog
+echo $vrout
+$exe $vmac &> $vlog &
+
+wait
+exit

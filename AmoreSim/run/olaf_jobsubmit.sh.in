@@ -1,0 +1,18 @@
+#!/bin/bash -f
+#SBATCH -J test
+#SBATCH -N 1
+##SBATCH -n 5
+##SBATCH --mincpus=1
+#SBATCH -p jepyc
+#SBATCH -a 0-10
+
+source /mnt/lustre/ibs/cupmc/env_v0.sh
+cd @AMORESIM_WORK_DIR@/AmoreSim/run
+
+for val in {0..1}
+do
+	./run_II_decay.sh `expr $SLURM_ARRAY_TASK_ID + 1000 \* $val` 10
+done
+
+date
+exit

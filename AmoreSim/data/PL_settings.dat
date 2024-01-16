@@ -1,0 +1,8 @@
+UseCupPhysList true
+EnableOptical true
+EnableScintillation true
+EnableCerenkov true
+EnableThermalNeutron false
+OmitHadronPhysics true
+RefPhysListName QGSP_BERT_HP
+EMPhysicsName default

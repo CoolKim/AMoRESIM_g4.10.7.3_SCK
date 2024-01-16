@@ -1,0 +1,198 @@
+
+#/vis/open OGLSX
+#/vis/open OGLIX
+#/vis/open OGLIXm
+#/vis/open OGLSXm
+
+#######################
+## Hadronic processes
+#######################
+/cupdebug/cupparam omit_hadronic_processes 1.0
+
+####################
+## Select Detector
+####################
+/detector/select AmoreDetector
+
+#############################
+## Select Detector Geometry
+#############################
+/detGeometry/select DETGEOM__
+/detGeometry/NeutronMode NMODE__
+
+/detGeometry/200/selectVeto @AMORESIM_VETO_CONF@
+/detGeometry/200/selectCavern ToyHemiSphere
+
+/detGeometry/Pilot/EnableMumetal false
+/detGeometry/Pilot/EnableTargetRoom true
+
+/detGeometry/I/EnableSuperCMagneticShield true
+/detGeometry/I/EnableCrystalArray true
+
+/detGeometry/EnableOrigGeom true
+/detGeometry/EnableScint true
+/detGeometry/EnableGantry true
+/detGeometry/EnableInnerDet true
+/detGeometry/EnableInnermost true
+/detGeometry/EnableNeutronShield true
+
+/detGeometry/nShieldingToyConf RealConf
+
+####################
+## Set Ntuple Contents (On/Off) default:0
+####################
+/ntuple/primary 1
+/ntuple/track 1
+/ntuple/step 1
+/ntuple/muon 0
+/ntuple/photon 0
+/ntuple/scint 0
+
+/ntuple/recordWithCut false
+
+###################
+## Set cut values
+###################
+#/Cup/phys/CutsAll 0.1 mm
+#!#/Cup/phys/DetectorCuts 0.001 mm
+
+########################
+## verboseLevel option
+########################
+/run/verbose 0
+/event/verbose 0
+#/control/verbose 1
+/control/verbose 0
+/tracking/verbose 1
+/tracking/storeTrajectory 0
+
+###############
+## Initialize
+###############
+/run/initialize
+
+#####################
+## Output Root File
+#####################
+/event/output_file ROOT_OUT__
+
+##########################
+## Scintillation Verbose
+##########################
+#!#/cupscint/verbose 0
+
+####################
+## PMTOpticalModel
+####################
+#/PMTOpticalModel/verbose 1
+#/PMTOpticalModel/verbose 0
+#/PMTOpticalModel/luxlevel 3  #CHANGED#
+
+############################
+## RadioactiveDecay Option
+############################
+#/grdm/applyICM false
+#/grdm/applyARM false
+
+####################
+## Debug messenger
+####################
+#/cupdebug/dumpmat
+/cupdebug/dumpgeom
+#/cupdebug/cupparam_dump
+
+
+#########################
+## How to set particles
+#########################
+############################################################################################################
+## (1) source test											   #
+#Primary event generator: use user controlled particle gun, number 3, which uses vtx #17, pos #9	   #
+#/generator/event_window 1000 (default: 1000ns)								   #
+#/generator/rates 3 1 (default: 1 Hz)									   #
+#/generator/pos/set index "x y z" (fixed position of the point in mm)					   #
+#/generator/pos/set index "x y z fill [physicalVolumeName]" (positions uniformly filling a physical volume)#
+#/generator/pos/set 9 "400 0 0 fill GammaCatcherInteriorPhys"						   #
+#/generator/vtx/set index "particle_name dirx diry dirz kineticEnergyMeV [polx poly polz] 		   #
+#/generator/vtx/set 17 "Th232 0 0 0  0" (Thorium 232 nuclei at rest)					   #
+#													   #
+## (2) events from external event generator								   #
+#Use the "spare hepevt" generator, number 38, which uses vtx#18 and pos#10 				   #
+#Tell the generator to merge/split events separated by less/more than 1e7 ns 				   #
+#/generator/event_window 1e7										   #
+#/generator/rates 38 1.0										   #
+#/generator/vtx/set 18 "/users/ejjeon/work/reno/reno_v2.0.4/MockSim/gen/Co60.dat"			   #
+#/generator/vtx/set 18 "/users/ejjeon/work/reno/reno_v2.0.4/MockSim/gen/trivial_co60_gammas |"		   #
+############################################################################################################
+#/generator/event_window 1e7										   #
+#/generator/rates 38 1.0										   #
+#/generator/vtx/set 18 "/data/users/ejjeon/muons_atYangyang/A5/muFluxatY2LA5_xdist30m_xsize10m_run1000_20000000evts.txt"
+
+##############################################################################################
+## Radioactive source: Th232 (1 per 1E11 years ~0.3E-18 Bq (each nucleus has time to decay))
+##############################################################################################
+#/generator/event_window 10000
+#/generator/rates 3 4.9E-18
+
+################
+## Source test
+################
+
+## For pos setup: internal
+#/generator/pos/set 9 "0 100 100"
+
+## For vtx setup
+/generator/gun geantino PRIMPOSX__ PRIMPOSY__ PRIMPOSZ__ PRIMDIRX__ PRIMDIRY__ PRIMDIRZ__ 1
+/event/primary/enablePrimarySkew PRIMSKEW__
+#/generator/vtx/set 17 "U238 0 0 0 0  0"
+#/generator/gun mu- 10 0 14000 0 0 -1 200000
+#/generator/gun mu- 40 0 4000 0 0 -1 10000
+#/generator/gun mu- 1294.20 10 4829.63 -0.258819 0 -0.965926 200000 # 15DEG, toward origin
+#/generator/gun mu- 3535.53 10 3535.53 -0.906308 0 -0.422618 200000 # 45DEG, toward CMO crystal
+#/generator/gun mu- 435.779 0 4980.97 0 0 -1 200000 # 5DEG
+#/generator/gun mu- 435.779 0 4980.97 0 0 -1 200000 # 5DEG
+#/generator/gun mu- 10 3535.53 3535.53 0 -0.906308 -0.422618 200000 # 45DEG, toward CMO crystal
+
+#/generator/event_window 1e12
+#/generator/rates 38 100.0
+#/generator/vtx/set 18 /data/MC/muons/muons_atHanduk/muFluxatHanduk_xdist15m_xsize10m_run10_20000000evts.txt
+
+#/generator/gun mu- 0 0 5000 1.07845e-5 0 -0.99999999994184685103704168795957230031490325927734375 200000    # test용
+
+#/generator/gun mu- 0 0 5000 -3.422662126782154994836617802056455417414326802827417850494384765625e-07 0 -0.9999999999999413802242997917346656322479248046875 200000   # 0.1rms
+#/generator/gun mu- 0 0 5000 -6.845324253563908707814473879327277217043956625275313854217529296875e-07 0 -0.9999999999997657429418040919699706137180328369140625 200000   # 0.2rms
+#/generator/gun mu- 0 0 5000 -1.02679863803448609158659905749022556165073183365166187286376953125e-06 0 -0.999999999999472866107907975674606859683990478515625 200000   # 0.3rms
+#/generator/gun mu- 0 0 5000 -1.3690648507124609278341222096120333162616589106619358062744140625e-06 0 -0.99999999999906286074491390536422841250896453857421875 200000   # 0.4rms
+#/generator/gun mu- 0 0 5000 -1.711331063390275463096377485394672390839332365430891513824462890625e-06 0 -0.99999999999853572685282188103883527219295501708984375 200000   # 0.5rms
+#/generator/gun mu- 0 0 5000 -2.0535972760678896750666071191471218071455950848758220672607421875e-06 0 -0.99999999999789135340932944018277339637279510498046875 200000   # 0.6rms
+#/generator/gun mu- 0 0 5000 -2.39586348874526311792157971802819105278103961609303951263427734375e-06 0 -0.99999999999712996245904150782735086977481842041015625 200000   # 0.7rms
+#/generator/gun mu- 0 0 5000 -2.73812970142235576935453751634685914950750884599983692169189453125e-06 0 -0.99999999999625133195735315894125960767269134521484375 200000   # 0.8rms
+#/generator/gun mu- 0 0 5000 -3.0803959140991278188169595619871898861674708314239978790283203125e-06 0 -0.9999999999952555729265668560401536524295806884765625 200000   # 0.9rms
+#/generator/gun mu- 0 0 5000 -3.42266212677553903224385127568307751744214328937232494354248046875e-06 0 -0.9999999999941426853666825991240330040454864501953125 200000   # 1.0rms
+
+#/generator/rates 3 0.1
+
+#########
+## Seed
+#########
+/cupdebug/setseed 1
+
+#/vis/viewer/set/upVector 0 0 1
+#/vis/viewer/set/viewpointThetaPhi 45 45
+
+#/vis/open HepRepFile
+#/vis/drawVolume
+#/vis/viewer/flush
+
+########
+## Run
+########
+
+/run/beamOn 1
+
+########
+## Only visual
+########
+
+#/geometry/test/grid_cells 10000 10000 10000
+#/geometry/test/recursive_test

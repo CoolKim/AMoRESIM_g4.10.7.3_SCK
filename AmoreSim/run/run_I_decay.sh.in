@@ -1,0 +1,119 @@
+#!/bin/bash -f
+
+#source /opt/local/libexec/root6/bin/thisroot.sh
+#source /Users/clara/Software/Geant4/install/v10.05.p01/include/Geant4/../../bin/geant4.sh
+#workdir="/Users/clara/Work/build_sim"
+source @ROOT_BINARY_DIR@/thisroot.sh
+source @Geant4_INCLUDE_DIR@/../../bin/geant4.sh
+workdir="@AMORESIM_WORK_DIR@"
+
+if [ $# -lt 1 ] ; then
+    echo "WRONG CONFIGURATION"
+    exit
+fi
+if [ "x$2" = "x" ]; then
+    if [ "x$SGE_TASK_ID" = "x" ]; then
+        echo "WRONG CONFIGURATION"
+        exit
+    else
+        runid=`expr $SGE_TASK_ID - 1`
+        nevt=$1
+    fi
+else
+    # start run number = (0 1*ncore 2*ncore 3*ncore ..... 10*ncore 11*ncore  12*ncore)
+    runid=$1
+    # number of events
+    nevt=$2
+fi
+
+# how many cores do you want to use?
+ncore=100
+
+# numbering output file name
+irun=`expr $runid / $ncore`
+runno=`expr $runid - $ncore \* \( $irun - 1 \)`
+
+export CupDATA=$workdir"/CupSim/data"
+export AmoreDATA=$workdir"/AmoreSim/data"
+
+# detector setup
+setup="CMO"
+
+# run name
+jobname="internal-bulk"
+
+# source name
+# REFERENCE for source name #
+# part_name (U238 Th232 K40 U235 Pb210 Na22 I125 I126 Te121 Te121m Te123m Te125m Te127m H3)
+# part_name (Ac227 Pb210 Na22 I125 I126 Te121 Te121m Te123m Te125m Te127m H3)
+# part_name (Rn222)
+part_name=(U238 Th232 K40 U235 Pb210 Na22 I125 I126 Te121 Te121m Te123m Te125m Te127m H3)
+
+# for meta stable state
+part=${part_name[$irun]}
+if [ ${part} = "Te121m" ]; then
+    elevel=0.2939800
+elif [ ${part} = "Te123m" ]; then
+    elevel=0.2476
+elif [ ${part} = "Te125m" ]; then
+    elevel=0.144795
+elif [ ${part} = "Te127m" ]; then
+    elevel=0.08826
+else
+    elevel=0
+fi
+
+
+# decay rate = ln2/half_life (in Hz)
+# REFERENCE for decay rate
+# decay_rate (4.9E-18 1.6E-18 1.8E-17 3.1E-17 1E-9 8.5E-9 1.4E-7 6.2E-7 4.2E-7 4.9E-8 6.7E-8 1.4E-7 7.6E-8 1.8E-9)
+# decay_rate (3.1E-17 1E-9 8.5E-9 1.4E-7 6.2E-7 4.2E-7 4.9E-8 6.7E-8 1.4E-7 7.6E-8 1.8E-9)
+#decay_rate=(4.9E-18 1.6E-18 1.8E-17 3.1E-17 1E-9 8.5E-9 1.4E-7 6.2E-7 4.2E-7 4.9E-8 6.7E-8 1.4E-7 7.6E-8 1.8E-9)
+
+
+# source category
+# REFERENCE for source category
+# srcpos=internal
+# srcpos=external-pmt
+srcpos=internal
+
+# event window: 10us(=10000 ns) for KIMS-NaI, 100ms(=1E8 ns) for AMoRE-pilot
+eventwindow=100000000
+
+# for decay rate [Hz]
+decayrate=${decay_rate[$irun]}
+
+timeseed=`date +%s | cut -b1-8`
+
+echo $runid
+echo $irun
+echo $runno
+echo $part
+echo $decayrate
+echo $elevel
+echo $timeseed
+
+# ===================================================
+
+exe=$workdir/AmoreSim/amoresim
+
+# output directory (must contain mac log root directory)
+#outdir="/Users/clara/Work/scratch"
+outdir="@SIMOUT_PATH@"
+outpath=$outdir/$jobname
+output=$outpath"/root/amoreI_"$setup"_"$part"-run"$runid"_"$nevt
+mac=$outpath"/mac/amoreI-"$setup"_"$runid"_"$nevt".mac"
+log=$outpath"/log/amoreI-"$setup"_"$runid"_"$nevt".txt"
+
+
+if [ -e $mac ]; then
+    rm -f $mac
+fi
+
+/usr/bin/sed -e s#OUTPUT#$output#g -e s#NEVENTS#$nevt#g -e s#PART#$part#g -e s#ELEVEL#$elevel#g -e s#SEED#$timeseed#g -e s#DECAYRATE#$decayrate#g -e s#EVENTWINDOW#$eventwindow#g $workdir"/AmoreSim/mac/I_dc_"$srcpos".mac" > $mac
+
+#${exe} ${mac} &> ${log}
+# ${exe} ${mac} &> /dev/null
+ ${exe} ${mac}
+
+exit

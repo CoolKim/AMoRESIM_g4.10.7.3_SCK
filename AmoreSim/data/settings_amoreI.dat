@@ -1,0 +1,21 @@
+#values-- lengths in millimeters
+arraySizeX 196
+arraySizeY 196
+arrayHeight 357.90
+upperPanelThick 10.
+upperPanelSizeX 196.
+upperPanelSizeY 196.
+bottomPanelSizeX 166.
+bottomPanelSizeY 151.
+bottomPanelThick 12.50
+copperFrameSizeX 77.
+copperFrameSizeY 74.
+copperFrameSizeZ 4.64
+photonFrameSizeX 57
+photonFrameSizeY 73.8
+photonFrameSizeZ 6
+smallBlock1SizeX 10
+smallBlock1SizeY 10
+smallBlock1SizeZ 6
+smallBlock1DistX -5
+smallBlock1DistY -15
