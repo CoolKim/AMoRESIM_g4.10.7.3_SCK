@@ -556,19 +556,19 @@ void AmoreDetectorConstruction::ConstructAMoRE200_ID(G4LogicalVolume *aWorkAreaL
 	G4VisAttributes *logiSourceVis  = new G4VisAttributes(red);
 
 	if (flagInvisible || flagOneCell) {
-		logiSSOVC->SetVisAttributes(G4VisAttributes::Invisible);
-		logiCu4->SetVisAttributes(G4VisAttributes::Invisible);
-		logiCu3->SetVisAttributes(G4VisAttributes::Invisible);
-		logiCu2->SetVisAttributes(G4VisAttributes::Invisible);
-		logiCu1->SetVisAttributes(G4VisAttributes::Invisible);
+		logiSSOVC->SetVisAttributes(G4VisAttributes::GetInvisible);
+		logiCu4->SetVisAttributes(G4VisAttributes::GetInvisible);
+		logiCu3->SetVisAttributes(G4VisAttributes::GetInvisible);
+		logiCu2->SetVisAttributes(G4VisAttributes::GetInvisible);
+		logiCu1->SetVisAttributes(G4VisAttributes::GetInvisible);
 
 		if (flagInvisible == 999) {
-			logiCuMCP->SetVisAttributes(G4VisAttributes::Invisible);
-			logiCuP1->SetVisAttributes(G4VisAttributes::Invisible);
-			logiCuP2->SetVisAttributes(G4VisAttributes::Invisible);
-			logiCuP3->SetVisAttributes(G4VisAttributes::Invisible);
-			logiPbP1->SetVisAttributes(G4VisAttributes::Invisible);
-			logiPbP2->SetVisAttributes(G4VisAttributes::Invisible);
+			logiCuMCP->SetVisAttributes(G4VisAttributes::GetInvisible);
+			logiCuP1->SetVisAttributes(G4VisAttributes::GetInvisible);
+			logiCuP2->SetVisAttributes(G4VisAttributes::GetInvisible);
+			logiCuP3->SetVisAttributes(G4VisAttributes::GetInvisible);
+			logiPbP1->SetVisAttributes(G4VisAttributes::GetInvisible);
+			logiPbP2->SetVisAttributes(G4VisAttributes::GetInvisible);
 		}
 	} 
 	else {

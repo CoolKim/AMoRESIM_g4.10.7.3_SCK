@@ -67,7 +67,7 @@ void AmoreDetectorConstruction::ConstructMyDetector() {
     G4double bounding_size    = 20. * meter / 2.0;
     G4Box *boxHall            = new G4Box("hallbox", bounding_size, bounding_size, bounding_size);
     G4LogicalVolume *logiHall = new G4LogicalVolume(boxHall, _air, "logiHall");
-    logiHall->SetVisAttributes(G4VisAttributes::Invisible);
+    logiHall->SetVisAttributes(G4VisAttributes::GetInvisible);
 
     G4VPhysicalVolume *physHall = new G4PVPlacement(0,                      // rotation
                                                     G4ThreeVector(0, 0, 0), // translation

@@ -138,6 +138,7 @@ void AmorePLManager::BuildPhysicsList() {
 
     if (fBuildOptical) {
         G4OpticalPhysics *nowOpticalPhysics = new G4OpticalPhysics();
+/*
         if (fEnableScintillation)
             nowOpticalPhysics->Configure(kScintillation, true);
         else
@@ -146,6 +147,7 @@ void AmorePLManager::BuildPhysicsList() {
             nowOpticalPhysics->Configure(kCerenkov, true);
         else
             nowOpticalPhysics->Configure(kCerenkov, false);
+*/
 
         fPhysicsList->RegisterPhysics(nowOpticalPhysics);
     }

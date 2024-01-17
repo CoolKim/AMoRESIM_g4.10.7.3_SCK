@@ -353,7 +353,7 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 	logiFloor -> SetVisAttributes(visRock);
 	logiRockShell -> SetVisAttributes(visRock);
 	//logiTopRock   -> SetVisAttributes(visRock);
-	//logiTopRock -> SetVisAttributes(G4VisAttributes::Invisible);
+	//logiTopRock -> SetVisAttributes(G4VisAttributes::GetInvisible);
 
 	// Virtural volume for rock gamma simulation
 	shieldHousingBox = new G4Box("shieldHousingBox",
@@ -486,12 +486,12 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 	plasticVetoHousingSolid = new G4SubtractionSolid("PlasticVetoHousing_Solid", plasticVetoHousing1Box, IDspaceBox, 0,
 			G4ThreeVector(0, 0, plasticVetoHousing1Box->GetZHalfLength() - IDspaceBox->GetZHalfLength()));
 	plasticVetoHousing1LV = new G4LogicalVolume(plasticVetoHousingSolid, _air, "PlasticVetoHousing1_LV");
-	plasticVetoHousing1LV->SetVisAttributes(G4VisAttributes::Invisible);
+	plasticVetoHousing1LV->SetVisAttributes(G4VisAttributes::GetInvisible);
 
 	plasticVetoHousing2Box = new G4Box("PlasticVetoHousing2_Box",
 			bottom_veto_housingX/2., bottom_veto_housingY/2., (plastic_veto_thickness + profile_thickness)/2.);
 	plasticVetoHousing2LV = new G4LogicalVolume(plasticVetoHousing2Box, _air, "PlasticVetoHousing2_LV");
-	plasticVetoHousing2LV->SetVisAttributes(G4VisAttributes::Invisible);
+	plasticVetoHousing2LV->SetVisAttributes(G4VisAttributes::GetInvisible);
 
 	// veto supporter (aluminium profile)
 	plasticVetoSupporterV1Box = new G4Box("PlasticVetoSupporterV1_Box",
@@ -573,7 +573,7 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 	HatBeamHousingSolid = new G4SubtractionSolid("HatBeamHousingSolid",
 			shieldHatAirBox, HatBeamHousingInBox,0, G4ThreeVector(0,0,-HatHBeam_size/2.) );
 	HatBeamHousingLV = new G4LogicalVolume(HatBeamHousingSolid, _air, "HatBeamHousing_LV");
-	HatBeamHousingLV->SetVisAttributes(G4VisAttributes::Invisible);
+	HatBeamHousingLV->SetVisAttributes(G4VisAttributes::GetInvisible);
 
 	HatBeamLong1Box = new G4Box("HatBeamLong1_Box",HatHBeam_size/2., HatHBeam_size/2., HatHBeam_heightL/2.);
 	HatBeamLong2Box = new G4Box("HatBeamLong2_Box",HatHBeam_size/2., HatHBeam_size/2., 
@@ -623,7 +623,7 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 	DetHbeamHousingBox = new G4Box("DetHbeamHousingBox",
 			shieldHatSpaceBox->GetXHalfLength(), shieldHatSpaceBox->GetYHalfLength(), shieldHatSpaceBox->GetZHalfLength()-DetHbeam_size/2.);
 	DetHbeamHousingLV = new G4LogicalVolume(DetHbeamHousingBox, _air, "DetHbeamHousing_LV");
-	DetHbeamHousingLV->SetVisAttributes(G4VisAttributes::Invisible);
+	DetHbeamHousingLV->SetVisAttributes(G4VisAttributes::GetInvisible);
 
 	DetHbeamHBox = new G4Box("DetHbeamH_Box", DetHbeam_size/2., DetHbeam_size/2., shieldHatSpaceBox->GetYHalfLength());
 	DetHbeamVBox = new G4Box("DetHbeamV_Box", DetHbeam_size/2., DetHbeam_size/2., PS_housing_height/2.);
@@ -673,7 +673,7 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 		neutronmodeCavern = new G4Sphere("cavern_solid", 0, cavern_nMode_radius, 0., 360. * deg, 0, 180. * deg);
 		cavern_solid = neutronmodeCavern;
 		logiCavern   = new G4LogicalVolume(cavern_solid, _air, "logiCavern");
-		logiCavern  -> SetVisAttributes(G4VisAttributes::Invisible);
+		logiCavern  -> SetVisAttributes(G4VisAttributes::GetInvisible);
 		physCavern   = new G4PVPlacement(nullptr, {}, logiCavern, "physCavern", logiWorld, false, 0, OverlapCheck);
 	} 
 	else if (fRockgammaMode) { /// for rock gammna simulation
@@ -1319,7 +1319,7 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 	HbeamHousing = new G4SubtractionSolid("hbeamhousing_Solid", HbeamHousing, HbeamHousingCut, 0, 
 			G4ThreeVector( HBeam_housingDist, 0, 0));
 	HbeamHousingLV = new G4LogicalVolume(HbeamHousing, _air, "HbeamHousing_LV");
-	HbeamHousingLV->SetVisAttributes(G4VisAttributes::Invisible);
+	HbeamHousingLV->SetVisAttributes(G4VisAttributes::GetInvisible);
 
 	if(whichVetoGeometry==kVeto_Beam){
 		// H-beam Bottom ----------

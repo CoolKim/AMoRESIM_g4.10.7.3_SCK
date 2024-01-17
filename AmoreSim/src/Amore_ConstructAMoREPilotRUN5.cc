@@ -2967,7 +2967,7 @@ void AmoreDetectorConstruction::ConstructAMoREPilotRUN5() {
   G4cout << "Set Geometry Attributes...\n";
   logiHallVis = new G4VisAttributes(G4Colour(0.8, 0.8, 0.8, 0.1));
   logiHall->SetVisAttributes(logiHallVis);
-  logiHall->SetVisAttributes(G4VisAttributes::Invisible);
+  logiHall->SetVisAttributes(G4VisAttributes::GetInvisible);
 
   // llization
   G4VisAttributes *va_smallbox = new G4VisAttributes(brown);
@@ -3066,31 +3066,31 @@ void AmoreDetectorConstruction::ConstructAMoREPilotRUN5() {
     logiGeWafer->SetVisAttributes(logiGeWaferVis);
     logiVacDisk->SetVisAttributes(logiVacDiskVis);
   } else {
-    logiVacDisk->SetVisAttributes(G4VisAttributes::Invisible);
+    logiVacDisk->SetVisAttributes(G4VisAttributes::GetInvisible);
     logiPhotonDetVis->SetVisibility(true);
     logiPhotonDetVis->SetForceWireframe(true);
     logiPhotonDet->SetVisAttributes(logiPhotonDetVis);
   }
   if (flagInvisible) {
-    logiRock->SetVisAttributes(G4VisAttributes::Invisible);
-    logiWorkArea->SetVisAttributes(G4VisAttributes::Invisible);
-    logiTopPbBox->SetVisAttributes(G4VisAttributes::Invisible);
-    logiPbBox->SetVisAttributes(G4VisAttributes::Invisible);
-    logiSSOVCOuter->SetVisAttributes(G4VisAttributes::Invisible);
-    logiCu4Outer->SetVisAttributes(G4VisAttributes::Invisible);
-    logiCu3Outer->SetVisAttributes(G4VisAttributes::Invisible);
-    logiCu2Outer->SetVisAttributes(G4VisAttributes::Invisible);
-    logiCu1Outer->SetVisAttributes(G4VisAttributes::Invisible);
+    logiRock->SetVisAttributes(G4VisAttributes::GetInvisible);
+    logiWorkArea->SetVisAttributes(G4VisAttributes::GetInvisible);
+    logiTopPbBox->SetVisAttributes(G4VisAttributes::GetInvisible);
+    logiPbBox->SetVisAttributes(G4VisAttributes::GetInvisible);
+    logiSSOVCOuter->SetVisAttributes(G4VisAttributes::GetInvisible);
+    logiCu4Outer->SetVisAttributes(G4VisAttributes::GetInvisible);
+    logiCu3Outer->SetVisAttributes(G4VisAttributes::GetInvisible);
+    logiCu2Outer->SetVisAttributes(G4VisAttributes::GetInvisible);
+    logiCu1Outer->SetVisAttributes(G4VisAttributes::GetInvisible);
 
     if (flagInvisible == 999) {
       for (int nn = 0; nn < 5; nn++) {
-        logiCMOCell[nn]->SetVisAttributes(G4VisAttributes::Invisible);
+        logiCMOCell[nn]->SetVisAttributes(G4VisAttributes::GetInvisible);
       }
 
-      logiCuMCP->SetVisAttributes(G4VisAttributes::Invisible);
-      logiCuP1->SetVisAttributes(G4VisAttributes::Invisible);
-      logiPbP2->SetVisAttributes(G4VisAttributes::Invisible);
-      logiCuP3->SetVisAttributes(G4VisAttributes::Invisible);
+      logiCuMCP->SetVisAttributes(G4VisAttributes::GetInvisible);
+      logiCuP1->SetVisAttributes(G4VisAttributes::GetInvisible);
+      logiPbP2->SetVisAttributes(G4VisAttributes::GetInvisible);
+      logiCuP3->SetVisAttributes(G4VisAttributes::GetInvisible);
     }
   } else {
     logiCuP1Vis->SetForceSolid(true);
