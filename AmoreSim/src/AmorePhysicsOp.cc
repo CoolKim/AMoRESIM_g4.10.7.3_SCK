@@ -10,7 +10,6 @@
 #include "G4EmSaturation.hh"
 //#include "G4OpBoundaryProcess.hh"
 #include "G4OpticalPhysics.hh"
-#include "G4OpticalProcessIndex.hh"
 
 #include "G4Version.hh"
 

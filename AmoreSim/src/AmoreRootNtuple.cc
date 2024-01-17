@@ -468,7 +468,6 @@ void AmoreRootNtuple::SetTGSD(const G4Event *a_event) {
     (void)tgTotEdepQuenched;
     Ctgsd->SetTotEdep(totalE);
     Ctgsd->SetTotEdepQuenched(totalEquenched);
-		Ctgsd->SetNHit(iHit);
     Ctgsd->SetNTotCell(nTotCell);
 		G4cout << " nHit: " << iHit  << ", TotEdep: " << totalE << endl;
 }

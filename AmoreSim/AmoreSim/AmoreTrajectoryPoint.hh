@@ -38,6 +38,7 @@
 #include "G4VTrajectoryPoint.hh"
 #include "G4Version.hh"
 #include "globals.hh"
+#include "G4Step.hh"
 
 class G4Material;
 class G4VProcess;
