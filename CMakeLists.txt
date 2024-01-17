@@ -5,7 +5,7 @@
 # Setup the project and require CMake version above 3.5
 #----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
-project(AmoreSim_Release)
+project(AMORESIM)
 
 set(CMAKE_COLOR_MAKEFILE TRUE)
 
