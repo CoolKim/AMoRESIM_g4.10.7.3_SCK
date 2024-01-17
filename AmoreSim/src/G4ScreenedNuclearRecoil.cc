@@ -936,7 +936,7 @@ void G4NativeScreenedCoulombCrossSection::LoadData(G4String screeningKey, G4int 
         const G4int nMatElements             = material->GetNumberOfElements();
 
         for (G4int iEl = 0; iEl < nMatElements; iEl++) {
-            G4Element *element = (*elementVector)[iEl];
+            const G4Element *element = (*elementVector)[iEl];
             G4int Z            = (G4int)element->GetZ();
             G4double a2        = element->GetA() * (mole / gram);
 
@@ -1853,7 +1853,7 @@ void G4NativeScreenedCoulombCrossSection::LoadData(G4String screeningKey, G4int 
         const G4int nMatElements             = material->GetNumberOfElements();
 
         for (G4int iEl = 0; iEl < nMatElements; iEl++) {
-            G4Element *element = (*elementVector)[iEl];
+            const G4Element *element = (*elementVector)[iEl];
             G4int Z            = (G4int)element->GetZ();
             G4double a2        = element->GetA() * (mole / gram);
 

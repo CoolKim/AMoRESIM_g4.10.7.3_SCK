@@ -36,6 +36,7 @@
 #include "G4UnitsTable.hh"
 #include "G4VProcess.hh"
 #include "G4Version.hh"
+#include "G4UIcommand.hh"
 
 //#define G4ATTDEBUG
 #ifdef G4ATTDEBUG
@@ -144,7 +145,7 @@ std::vector<G4AttValue> *AmoreTrajectoryPoint::CreateAttValues() const {
     values->push_back(G4AttValue("Pos", G4BestUnit(fPosition, "Length"), ""));
     values->push_back(G4AttValue("Mom", G4BestUnit(fPosition, "Energy"), ""));
     values->push_back(G4AttValue("Pol", G4BestUnit(fPolarization, "Length"), ""));
-    values->push_back(G4AttValue("PDGCode", fPDGCode, ""));
+    values->push_back(G4AttValue("PDGCode", G4UIcommand::ConvertToString(fPDGCode), ""));
     values->push_back(G4AttValue("KinE", G4BestUnit(fKinE, "Energy"), ""));
     values->push_back(G4AttValue("Time", G4BestUnit(fTime, "Time"), ""));
     values->push_back(G4AttValue("Mass", G4BestUnit(fMass, "Energy"), ""));

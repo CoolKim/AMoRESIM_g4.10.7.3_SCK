@@ -653,7 +653,8 @@ void AmoreRootNtuple::RecordStep(const G4Step *a_step) {
                 break;
             case eDetGeometry::kDetector_AMoRE_I: {
                 constexpr const char *pvCheckerString = "_Crystal_PV";
-                size_t checkerIndex                 = volume.index(pvCheckerString);
+                //size_t checkerIndex                 = volume.index(pvCheckerString);
+                size_t checkerIndex                 = volume.find(pvCheckerString);
                 if (checkerIndex != G4String::npos) {
                     G4VPhysicalVolume *theMother;
                     size_t envelopeCopyNo = 1;

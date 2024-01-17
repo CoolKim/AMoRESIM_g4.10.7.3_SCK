@@ -36,7 +36,7 @@
 
 #include "AmoreSim/PhysListEmStandardNR.hh"
 
-#include "G4EmProcessOptions.hh"
+//#include "G4EmProcessOptions.hh"
 #include "G4LossTableManager.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4SystemOfUnits.hh"
@@ -228,6 +228,7 @@ void PhysListEmStandardNR::ConstructProcess() {
         }
     }
 
+/*
     // Em options
     //
     // Main options and setting parameters are shown here.
@@ -244,7 +245,7 @@ void PhysListEmStandardNR::ConstructProcess() {
 
     // scattering
     emOptions.SetPolarAngleLimit(0.0);
-
+*/
     // Deexcitation
     G4VAtomDeexcitation *de = new G4UAtomicDeexcitation();
     G4LossTableManager::Instance()->SetAtomDeexcitation(de);
@@ -461,6 +462,7 @@ void PhysListEmStandardNR::ConstructProcess() {
         }
     }
 
+/*
     // Em options
     //
     // Main options and setting parameters are shown here.
@@ -477,7 +479,7 @@ void PhysListEmStandardNR::ConstructProcess() {
 
     // scattering
     emOptions.SetPolarAngleLimit(0.0);
-
+*/
     // Deexcitation
     G4VAtomDeexcitation *de = new G4UAtomicDeexcitation();
     G4LossTableManager::Instance()->SetAtomDeexcitation(de);
