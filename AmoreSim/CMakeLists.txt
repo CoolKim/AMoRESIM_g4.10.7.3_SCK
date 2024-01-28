@@ -1,7 +1,6 @@
 #----------------------------------------------------------------------------
 # Project Name: AmoreSim
 # Description: Simulation library & executable for AmoreSim package
-# Author: BaseHardware(basehw); 2018/05/31
 #----------------------------------------------------------------------------
 # Setup the project and require CMake version above 3.5
 #----------------------------------------------------------------------------
