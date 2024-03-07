@@ -3,7 +3,7 @@
 //
 //  Modified by E.J.Jeon 2007/06/14
 //  Modified by Y.S.Yoon 2015/06/15
-//  Modified by Jeewon Weo 2022/04/15
+//  Updated by J.Seo 2024/02/15
 
 #include "globals.hh"
 
@@ -55,15 +55,44 @@ static G4LogicalVolume *MakePit(G4double pitBox_x, G4double pitBox_z, G4Material
 	It is a member of the AmoreDetectorConstruction class, so it has
 	direct access to all the member variables in that class, including
 	saved material pointers and such.
- */
+	*/
 G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
-	//using namespace CLHEP;
+	using namespace CLHEP;
 	using namespace AmoreDetectorStaticInfo;
 	using namespace AmoreDetectorStaticInfo::ColorTable;
 	using namespace AmoreDetectorStaticInfo::AMoRE_200;
 
 	// -- database
 	CupParam &db(CupParam::GetDB());
+
+	// -- Visualization Attributes
+	G4VisAttributes *visRock = new G4VisAttributes(G4Colour(0.0, 0.8, 0.8, 0.3));
+	G4VisAttributes *visCavern = new G4VisAttributes(orangel);
+	G4VisAttributes *visAir = new G4VisAttributes(G4Colour(1,1,1,0.4));
+	G4VisAttributes *leadVis = new G4VisAttributes(G4Colour(0.0, 0.0, 0.7, 0.3));
+	G4VisAttributes *stainlessVis = new G4VisAttributes(G4Colour(0.6, 0.6, 0.7, 0.9));
+	G4VisAttributes *aluminiumVis = new G4VisAttributes(G4Colour(0.6, 0.6, 0.7, 0.1));
+	G4VisAttributes *ironVis = new G4VisAttributes(G4Colour(0,0,0,0.1));
+	G4VisAttributes *CuShieldVisAttr = new G4VisAttributes(G4Colour(23/255., 189/255., 79/255., 0.8));
+	G4VisAttributes *boricAcidVisAttr = new G4VisAttributes(G4Colour(0.4,0.4,0.4,0.2));
+	G4VisAttributes *plasticScintVis = new G4VisAttributes(G4Colour(0.8, 1.0, 0.725, 0.4));
+	G4VisAttributes *plasticVetoVis = new G4VisAttributes(G4Colour(1.0, 0.855, 0.725, 0.4));
+	G4VisAttributes *shieldPE_VisAttr = new G4VisAttributes(G4Colour(129 / 255., 193 / 255., 71 / 255., 0.9));
+	G4VisAttributes *shieldWaterTank_VisAttr = new G4VisAttributes(G4Colour(0, 0 , 1, 0.1));
+
+	visAir->SetForceSolid(true);
+	visRock->SetForceSolid(true);
+	visCavern->SetForceSolid(true);
+	leadVis->SetForceSolid(true);
+	stainlessVis->SetForceSolid(true);
+	aluminiumVis->SetForceSolid(true);
+	CuShieldVisAttr->SetForceSolid(true);
+	boricAcidVisAttr->SetForceSolid(true);
+	plasticScintVis->SetForceSolid(true);
+	plasticVetoVis->SetForceSolid(true);
+	shieldPE_VisAttr->SetForceSolid(true);
+	shieldWaterTank_VisAttr->SetForceSolid(true);
+
 
 	////////////////////////////////////////////////////
 	// Primitive values retrived from database
@@ -83,10 +112,10 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 	G4double al_plate_thickness        = db["al_plate_thickness"];
 
 	G4double PE_shield_thickness       = db["PE_shield_thickness"];
-	G4double copper_shield_thickness   = db["copper_shield_thickness"];
+	G4double thin_lead_shield_thickness= db["thin_lead_shield_thickness"];
 
-	G4double nShield_hatWallThickness  = db["nShield_hatWallThickness"];
 	G4double nShield_hatGapFromLead    = db["nShield_hatGapFromLead"];
+	G4double nShield_GapFromCeiling    = db["nShield_GapFromCeiling"];
 
 	G4double cavern_sphere_radius      = db["cavern_sphere_radius"];
 	G4double rock_shell_radius         = db["rock_shell_radius"];
@@ -100,17 +129,16 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 	// Barrel shield
 	const int nPStype = 2;
 	G4double lead_shield_height    =  // Lead shield height
-		airbuffer_height + copper_shield_thickness + lead_shield_thickness; 
+		airbuffer_height + thin_lead_shield_thickness + lead_shield_thickness; 
 	G4double lead_shield_halfsize    =  // Lead shield  half x,y
-		airbuffer_radius + copper_shield_thickness + lead_shield_thickness; 
+		airbuffer_radius + thin_lead_shield_thickness + lead_shield_thickness; 
 
 	G4double PS_housing_height =  // Barrel size
 		lead_shield_height + lead_housing_thickness*2 + 
 		boricacid_thickness + PE_shield_thickness;
 
 	G4double PS_housing_halfsize =  // Barrel size
-		lead_shield_halfsize + lead_housing_thickness + 
-		boricacid_thickness + PE_shield_thickness + plastic_veto_thickness  + profile_thickness;
+		longPSlength + profile_thickness*2.5 + plastic_veto_thickness;
 
 	// Rock
 	G4double rock_floor_thickness = pitBox_z/2.;
@@ -120,567 +148,316 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 	G4double world_size    = rock_shell_radius * sqrt(2);
 	G4double world_size_Z  = rock_shell_radius * sqrt(2) + rock_floor_thickness + floor_spacing;
 
-	// Real cavern (Handeok mine cavern) model
-	G4double cavern_loaf_width =
-		(cavern_subpizza_radius +
-		 (cavern_pizza_radius - cavern_subpizza_radius) * std::sin(cavern_pizza_angle_real / 2.)) * 2.;
-
-	G4double cavern_loaf_totalheight = cavern_loaf_height;
-
-	////////////////////////////////////////////////////
-	// Variable declaration for geometries
-	////////////////////////////////////////////////////
-
-	// World
-	G4Box *worldSolid;
-	G4LogicalVolume *logiWorld;
-
-	// Rock geometry (Hemisphere and Floor)
-	G4Sphere *solidRock;
-	G4LogicalVolume *logiRock;
-	G4ThreeVector rockTlate = G4ThreeVector(0);
-
-	G4Box *RockBox;
-	G4Box *TopRockBox;
-	G4Box *shieldHousingBox;
-	G4LogicalVolume *logiRockShell;
-	G4LogicalVolume *logiTopRock;
-	G4LogicalVolume *shieldHousingLV;
-
-	G4Tubs *floorSolid;
-	G4LogicalVolume *logiFloor;
-	G4ThreeVector rockFloorTlate = G4ThreeVector(0);
-
-	// Variables for cavern management
-	G4VSolid *cavern_solid;
-	G4ThreeVector cavern_tlate       = G4ThreeVector(0);
-
-	// Netron Mode cavern
-	G4Sphere *neutronmodeCavern;
-
-	// Toy cavern model (Hemisphere model)
-	G4Sphere *hemiSphereCavern;
-	G4LogicalVolume *logiCavern;
-	G4VPhysicalVolume *physCavern;
-
-	// Real cavern model
-	G4Box *cavernLoafBox;
-	G4Tubs *cavernMainPizza;
-	G4Tubs *cavernSubPizza;
-
-	G4UnionSolid *pizzaUnionStage1;
-	G4UnionSolid *pizzaUnionStage2;
-	G4SubtractionSolid *pizzaUnionStage3;
-	G4UnionSolid *cavernFinalSolid;
-
-	G4ThreeVector pizzaTlateInLoaf;
-	G4RotationMatrix *pizzaAlignRotMtx;
-	G4RotationMatrix *pizzaPart1RotMtx;
-	G4RotationMatrix *pizzaPart2RotMtx;
-
-	// Top Shield
-	G4Box *shieldHatSpaceBox;
-	G4Box *shieldHatPEBox;
-	G4Box *shieldWaterTankBox;
-	G4Box *shieldWaterHousingBox;
-	G4Box *shieldPMTroomBox;
-	G4Box *shieldHatAirBox;
-	G4Box *shieldHatAirBox1;
-	G4Box *HatBeamHousingInBox;
-	G4Box *HatBeamLong1Box;
-	G4Box *HatBeamLong2Box;
-	G4Box *HatBeamShortBox;
-	G4Box *HatBeamSpaceBox;
-	G4Box *HatAlPlateInBox;
-	G4Box *DetHbeamHousingBox;
-	G4Box *DetHbeamBox;
-	G4Box *DetHbeamSBox;
-	G4Box *DetHbeamMBox;
-	G4Box *DetHbeamHBox;
-	G4Box *DetHbeamVBox;
-	G4Box *DetHbeamSpaceBox;
-
-	G4VSolid *HatWaterHousingSolid;
-	G4VSolid *HatWaterTankSolid;
-	G4VSolid *HatBoricAcidSolid;
-	G4VSolid *HatBeamHousingSolid;
-	G4VSolid *HatBeamLong1Solid;
-	G4VSolid *HatBeamLong2Solid;
-	G4VSolid *HatBeamShortSolid;
-	G4VSolid *HatAlPlateSolid;
-	G4VSolid *DetHbeamSolid;
-	G4VSolid *DetHbeamSSolid;
-	G4VSolid *DetHbeamMSolid;
-	G4VSolid *DetHbeamHSolid;
-	G4VSolid *DetHbeamVSolid;
-
-	G4LogicalVolume *shieldHatBoricLV;
-	G4LogicalVolume *shieldHatPELV;
-	G4LogicalVolume *shieldWaterTankLV;
-	G4LogicalVolume *shieldWaterHousingLV;
-	G4LogicalVolume *shieldPMTroomLV;
-	G4LogicalVolume *shieldHatAirLV;
-	G4LogicalVolume *HatBeamHousingLV;
-	G4LogicalVolume *HatBeamLong1LV;
-	G4LogicalVolume *HatBeamLong2LV;
-	G4LogicalVolume *HatBeamShortLV;
-	G4LogicalVolume *HatAlPlateLV;
-	G4LogicalVolume *DetHbeamLV;
-	G4LogicalVolume *DetHbeamSLV;
-	G4LogicalVolume *DetHbeamMLV;
-	G4LogicalVolume *DetHbeamHLV;
-	G4LogicalVolume *DetHbeamVLV;
-	G4LogicalVolume *DetHbeamHousingLV;
-
-	G4PVPlacement *shieldWaterTankPV;
-	G4PVPlacement *shieldWaterHousingPV;
-	G4PVPlacement *shieldPMTroomPV;
-	G4PVPlacement *shieldHatBoricPV;
-	G4PVPlacement *HatBeamHousingPV;
-	G4PVPlacement *HatAlPlatePV;
-	G4PVPlacement *DetHbeamHousingPV;
-	G4PVPlacement *DetHbeamHPV[4];
-	G4PVPlacement *DetHbeamVPV[8];
-
-	// Barrel Shield
-	G4Box *IDspaceBox;
-	G4Box *plasticVetoBox[nPStype];
-	G4Box *plasticVetoCut[nPStype];
-	G4Box *plasticVetoAirBox[nPStype];
-	G4Box *plasticScintHolderBox[nPStype];
-	G4Box *plasticScintBox[nPStype];
-	G4Box *plasticVetoHousing1Box;
-	G4Box *plasticVetoHousing2Box;
-	G4Box *plasticVetoSupporterV1Box;
-	G4Box *plasticVetoSupporterV2Box;
-	G4Box *plasticVetoSupporterH1Box;
-	G4Box *plasticVetoSupporterH2Box;
-	G4Box *shieldPEBox;
-	G4Box *shieldBoricAcidBox;
-	G4Box *leadShieldBox;
-	G4Box *leadHousingBox;
-	G4Box *boricAcidBox;
-
-	G4VSolid *plasticVetoHousingSolid;
-	G4VSolid *plasticVetoSolid1[nPStype];
-	G4VSolid *plasticVetoSolid[nPStype];
-	G4VSolid *shieldPESolid;
-	G4VSolid *shieldBoricAcidSolid;
-	G4VSolid *leadShieldSolid;
-	G4VSolid *leadHousingSolid;
-	G4VSolid *boricAcidSolid;
-
-	G4LogicalVolume *aluminiumHolderLV[nPStype];
-	G4LogicalVolume *plasticScintOLV[nPStype];
-	G4LogicalVolume *plasticScintILV[nPStype];
-	G4LogicalVolume *plasticVetoHousing1LV;
-	G4LogicalVolume *plasticVetoHousing2LV;
-	G4LogicalVolume *plasticVetoSupporterV1LV;
-	G4LogicalVolume *plasticVetoSupporterV2LV;
-	G4LogicalVolume *plasticVetoSupporterH1LV;
-	G4LogicalVolume *plasticVetoSupporterH2LV;
-	G4LogicalVolume *shieldPELV;
-	G4LogicalVolume *shieldBoricAcidLV;
-	G4LogicalVolume *leadShieldLV;
-	G4LogicalVolume *leadHousingLV;
-	G4LogicalVolume *boricAcidLV;
-
-	G4PVPlacement     *vetoHousing1PV;
-	G4PVPlacement     *vetoHousing2PV;
-	G4PVPlacement     *shieldPEPV;
-	G4PVPlacement     *shieldBoricAcidPV;
-	G4VPhysicalVolume *BufferMother;
-
-	// H-beam && Pit
-	G4LogicalVolume *HbeamBotLV;
-	G4LogicalVolume *PitLV;
-	G4LogicalVolume *HbeamHousingLV;
-
-	///// Visualization Attributes/////
-	G4VisAttributes *visRock = new G4VisAttributes(G4Colour(0.0, 0.8, 0.8, 0.3));
-	G4VisAttributes *visCavern = new G4VisAttributes(orangel);
-	G4VisAttributes *leadVis = new G4VisAttributes(G4Colour(0.0, 0.0, 0.7, 0.3));
-	G4VisAttributes *stainlessVis = new G4VisAttributes(G4Colour(0.6, 0.6, 0.7, 0.9));
-	G4VisAttributes *aluminiumVis = new G4VisAttributes(G4Colour(0.6, 0.6, 0.7, 0.4));
-	G4VisAttributes *CuShieldVisAttr = new G4VisAttributes(G4Colour(23/255., 189/255., 79/255., 0.8));
-	G4VisAttributes *boricAcidVisAttr = new G4VisAttributes(G4Colour(0.4,0.4,0.4,0.2));
-	G4VisAttributes *plasticScintVis = new G4VisAttributes(G4Colour(0.8, 1.0, 0.725, 0.4));
-	G4VisAttributes *plasticVetoVis = new G4VisAttributes(G4Colour(1.0, 0.855, 0.725, 0.4));
-	G4VisAttributes *shieldPE_VisAttr = new G4VisAttributes(G4Colour(129 / 255., 193 / 255., 71 / 255., 0.9));
-	G4VisAttributes *shieldWaterTank_VisAttr = new G4VisAttributes(G4Colour(0, 0 , 1, 0.4));
-
-	visRock->SetForceSolid(true);
-	visCavern->SetForceSolid(true);
-	leadVis->SetForceSolid(true);
-	stainlessVis->SetForceSolid(true);
-	aluminiumVis->SetForceSolid(true);
-	CuShieldVisAttr->SetForceSolid(true);
-	boricAcidVisAttr->SetForceSolid(true);
-	plasticScintVis->SetForceSolid(true);
-	plasticVetoVis->SetForceSolid(true);
-	shieldPE_VisAttr->SetForceSolid(true);
-	shieldWaterTank_VisAttr->SetForceSolid(true);
 
 	////////////////////////////////////////////////////
 	// Make the world
 	////////////////////////////////////////////////////
-	worldSolid = new G4Box("World_solid", world_size, world_size, world_size_Z / 2.);
-	logiWorld  = new G4LogicalVolume(worldSolid, _air, "logiWorld");
+	G4Box *worldSolid = new G4Box("World_solid", world_size, world_size, world_size_Z / 2.);
+	G4LogicalVolume *logiWorld  = new G4LogicalVolume(worldSolid, _air, "logiWorld");
 	world_phys = new G4PVPlacement(nullptr, G4ThreeVector(0, 0, 0), logiWorld, 
 			"physWorld", nullptr, false, OverlapCheck);
 
 	////////////////////////////////////////////////////
 	// Build the rock geometry (Hemisphere and Floor)
 	////////////////////////////////////////////////////
-	floorSolid = new G4Tubs("Rock_Floor", 0, rock_shell_radius, rock_floor_thickness, 0, 360 * deg);
-	logiFloor  = new G4LogicalVolume(floorSolid, _rock, "logiFloor");
+	G4Tubs *floorSolid = new G4Tubs("Rock_Floor", 0, rock_shell_radius, rock_floor_thickness, 0, 360 * deg);
+	G4LogicalVolume *logiFloor  = new G4LogicalVolume(floorSolid, _rock, "logiFloor");
 
-	solidRock  = new G4Sphere("Rock_Solid", 0, rock_shell_radius, 0, 360 * deg, 0, 90 * deg);
-	logiRock   = new G4LogicalVolume(solidRock, _rock, "logiRock", 0, 0, 0);
+	G4Sphere *solidRock  = new G4Sphere("Rock_Solid", 0, rock_shell_radius, 0, 360 * deg, 0, 90 * deg);
+	G4LogicalVolume *logiRock = new G4LogicalVolume(solidRock, _rock, "logiRock", 0, 0, 0);
+	//G4LogicalVolume *logiVirtualRock   = new G4LogicalVolume(solidRock, _rock, "logiVirtualRock", 0, 0, 0);
+	//G4Sphere *solidVirtualRock = new G4Sphere("VirtualRock_Solid", 0, 15 * m, 0, 360 * deg, 0, 90 * deg);
+	//G4LogicalVolume *logiRock = new G4LogicalVolume(solidVirtualRock, _rock, "logiRock", 0, 0, 0);
 
-	RockBox       = new G4Box("RockBox", 
+	G4Box *RockBox       = new G4Box("RockBox", 
 			PS_housing_halfsize - plastic_veto_thickness - profile_thickness + rockshell_thickness,
 			PS_housing_halfsize - plastic_veto_thickness - profile_thickness + rockshell_thickness,
 			PS_housing_height/2. + rockshell_thickness + ovc_gap/2. + sst_zsize_half);
-	TopRockBox    = new G4Box("TopRockBox",
+	G4Box *TopRockBox    = new G4Box("TopRockBox",
 			PS_housing_halfsize - plastic_veto_thickness - profile_thickness,
 			PS_housing_halfsize - plastic_veto_thickness - profile_thickness,
 			rockshell_thickness/2.);
-	logiRockShell = new G4LogicalVolume(RockBox, _rock, "logiRockShell");
-	logiTopRock   = new G4LogicalVolume(TopRockBox, _rock1, "logiTopRock");
+	G4LogicalVolume *logiRockShell = new G4LogicalVolume(RockBox, _rock, "logiRockShell");
+	G4LogicalVolume *logiTopRock   = new G4LogicalVolume(TopRockBox, _rock1, "logiTopRock");
 
 	logiRock  -> SetVisAttributes(visRock);
 	logiFloor -> SetVisAttributes(visRock);
 	logiRockShell -> SetVisAttributes(visRock);
-	//logiTopRock   -> SetVisAttributes(visRock);
+	logiTopRock   -> SetVisAttributes(visRock);
 	//logiTopRock -> SetVisAttributes(G4VisAttributes::Invisible);
 
 	// Virtural volume for rock gamma simulation
-	shieldHousingBox = new G4Box("shieldHousingBox",
+	G4Box *shieldHousingBox = new G4Box("shieldHousingBox",
 			PS_housing_halfsize - plastic_veto_thickness - profile_thickness,
 			PS_housing_halfsize - plastic_veto_thickness - profile_thickness,
 			PS_housing_height/2.+ sst_zsize_half + ovc_gap/2.);
-	shieldHousingLV = new G4LogicalVolume(shieldHousingBox, _air, "shieldHousingLV");
+	G4LogicalVolume *shieldHousingLV = new G4LogicalVolume(shieldHousingBox, _air, "shieldHousingLV");
 	shieldHousingLV->SetVisAttributes(visCavern);
 
 	////////////////////////////////////////////
 	// Make Shield Solid and Logical volumes 
 	////////////////////////////////////////////
-	IDspaceBox   = new G4Box("IDspace_Box", 
+	G4Box *IDspaceBox   = new G4Box("IDspace_Box", 
 			airbuffer_radius - boricacid_thickness, 
 			airbuffer_radius - boricacid_thickness, 
 			airbuffer_height / 2. - boricacid_thickness / 2.);
 
 	// PE shield ----------
-	shieldPEBox   = new G4Box("IPEShield_Box", 
-			PS_housing_halfsize - plastic_veto_thickness - profile_thickness,
-			PS_housing_halfsize - plastic_veto_thickness - profile_thickness,
+	G4Box *shieldPEBox   = new G4Box("IPEShield_Box", 
+			lead_shield_halfsize + lead_housing_thickness + boricacid_thickness + PE_shield_thickness,
+			lead_shield_halfsize + lead_housing_thickness + boricacid_thickness + PE_shield_thickness,
 			PS_housing_height/2.);
-	shieldPESolid = new G4SubtractionSolid("IPEShield_Solid", shieldPEBox, IDspaceBox, 0,
+	G4VSolid *shieldPESolid = new G4SubtractionSolid("IPEShield_Solid", shieldPEBox, IDspaceBox, 0,
 			G4ThreeVector(0,0,shieldPEBox->GetZHalfLength() - IDspaceBox->GetZHalfLength()) );
 
-	shieldPELV = new G4LogicalVolume(shieldPESolid, _polyethylene, "IPEShield_LV");
+	G4LogicalVolume *shieldPELV = new G4LogicalVolume(shieldPESolid, _polyethylene, "IPEShield_LV");
 	shieldPELV -> SetVisAttributes(shieldPE_VisAttr);
 
 	// Boric Acid shield -------
-	shieldBoricAcidBox = new G4Box("shieldBoricAcid_Box",
+	G4Box *shieldBoricAcidBox = new G4Box("shieldBoricAcid_Box",
 			lead_shield_halfsize + lead_housing_thickness + boricacid_thickness,
 			lead_shield_halfsize + lead_housing_thickness + boricacid_thickness,
 			(lead_shield_height + boricacid_thickness) / 2. + lead_housing_thickness);
-	shieldBoricAcidSolid = new G4SubtractionSolid("shieldBoricAcid_Solid", shieldBoricAcidBox, IDspaceBox, 0,
+	G4VSolid *shieldBoricAcidSolid = new G4SubtractionSolid("shieldBoricAcid_Solid", shieldBoricAcidBox, IDspaceBox, 0,
 			G4ThreeVector(0, 0, shieldBoricAcidBox->GetZHalfLength() - IDspaceBox->GetZHalfLength()));
 
-	shieldBoricAcidLV = new G4LogicalVolume(shieldBoricAcidSolid, _BoricAcidRubber, "shieldBoricAcid_LV");
+	G4LogicalVolume *shieldBoricAcidLV = new G4LogicalVolume(shieldBoricAcidSolid, _BoricAcidRubber, "shieldBoricAcid_LV");
 	shieldBoricAcidLV -> SetVisAttributes(boricAcidVisAttr);
 
 	// Lead shield ----------
-	leadShieldBox   = new G4Box("OuterVetoShield_Box", 
+	G4Box *leadShieldBox   = new G4Box("OuterVetoShield_Box", 
 			lead_shield_halfsize, lead_shield_halfsize, lead_shield_height / 2.);
-	leadShieldSolid = new G4SubtractionSolid("LeadShield_Solid", leadShieldBox, IDspaceBox, 0,
+	G4VSolid *leadShieldSolid = new G4SubtractionSolid("LeadShield_Solid", leadShieldBox, IDspaceBox, 0,
 			G4ThreeVector(0,0,leadShieldBox->GetZHalfLength() + lead_housing_thickness - IDspaceBox->GetZHalfLength()) );
 
-	leadShieldLV = new G4LogicalVolume(leadShieldSolid, _lead, "OuterVetoShield_LV");
+	G4LogicalVolume *leadShieldLV = new G4LogicalVolume(leadShieldSolid, _lead, "OuterVetoShield_LV");
 	leadShieldLV -> SetVisAttributes(leadVis);
 
-	leadHousingBox   = new G4Box("OuterVetoHousing_Box",
+	G4Box *leadHousingBox   = new G4Box("OuterVetoHousing_Box",
 			lead_shield_halfsize + lead_housing_thickness,
 			lead_shield_halfsize + lead_housing_thickness,
 			lead_shield_height/2. + lead_housing_thickness);
-	leadHousingSolid = new G4SubtractionSolid("LeadHousing_Solid", leadHousingBox, IDspaceBox, 0,
+	G4VSolid *leadHousingSolid = new G4SubtractionSolid("LeadHousing_Solid", leadHousingBox, IDspaceBox, 0,
 			G4ThreeVector(0,0,leadHousingBox->GetZHalfLength() - IDspaceBox->GetZHalfLength()) );
 
-	leadHousingLV = new G4LogicalVolume(leadHousingSolid, _stainless, "OuterVetoHousing_LV");
+	G4LogicalVolume *leadHousingLV = new G4LogicalVolume(leadHousingSolid, _stainless, "OuterVetoHousing_LV");
 	leadHousingLV -> SetVisAttributes(stainlessVis);
 
-	// Copper shield -------
-	G4Box *CuShieldBox = new G4Box("Copper_Box", 
-			airbuffer_radius+copper_shield_thickness, 
-			airbuffer_radius+copper_shield_thickness, 
-			(airbuffer_height+copper_shield_thickness)/2.);
-	G4SubtractionSolid *CuShieldSolid = new G4SubtractionSolid("Copper_Solid", CuShieldBox, IDspaceBox, 0,
-			G4ThreeVector(0,0,CuShieldBox->GetZHalfLength() + lead_housing_thickness - IDspaceBox->GetZHalfLength()));
-	G4LogicalVolume *CuShieldLV = new G4LogicalVolume(CuShieldSolid, _copper, "CopperShield_LV");
-	CuShieldLV -> SetVisAttributes(CuShieldVisAttr);
+	// Thin lead shield ------- 
+	// Has been dicided to remove copper shield. Aug.2022.
+	// Lead shield divided two part. 
+	// (For low 214Bi contaminated lead(20 cm) and low 210Pb contaimnated lead(5 cm).) 
+	G4Box *ThinLeadShieldBox = new G4Box("ThinLead_Box", 
+			airbuffer_radius+thin_lead_shield_thickness, 
+			airbuffer_radius+thin_lead_shield_thickness, 
+			(airbuffer_height+thin_lead_shield_thickness)/2.);
+	G4VSolid *ThinLeadShieldSolid = new G4SubtractionSolid("ThinLead_Solid", 
+			ThinLeadShieldBox, IDspaceBox, 0,
+			G4ThreeVector(0,0,
+				ThinLeadShieldBox->GetZHalfLength() + lead_housing_thickness - IDspaceBox->GetZHalfLength()));
+	G4LogicalVolume *ThinLeadShieldLV = new G4LogicalVolume(ThinLeadShieldSolid, _lead, "ThinLeadShield_LV");
+	ThinLeadShieldLV -> SetVisAttributes(CuShieldVisAttr);
 
 	// Boric Acid ----------
-	boricAcidBox   = new G4Box("BoricAcid_Box", 
+	G4Box *boricAcidBox   = new G4Box("BoricAcid_Box", 
 			airbuffer_radius, airbuffer_radius, airbuffer_height / 2.);
-	boricAcidSolid = new G4SubtractionSolid("BoricAcid_Solid", boricAcidBox, IDspaceBox, 0,
+	G4VSolid *boricAcidSolid = new G4SubtractionSolid("BoricAcid_Solid", boricAcidBox, IDspaceBox, 0,
 			G4ThreeVector(0,0,
 				boricAcidBox->GetZHalfLength() + lead_housing_thickness - IDspaceBox->GetZHalfLength()) );
 
-	boricAcidLV = new G4LogicalVolume(boricAcidSolid, _BoricAcidRubber, "BoricAcid_LV");
+	G4LogicalVolume *boricAcidLV = new G4LogicalVolume(boricAcidSolid, _BoricAcidRubber, "BoricAcid_LV");
 	boricAcidLV -> SetVisAttributes(boricAcidVisAttr);
-	//cout << "Inner boric acid rubber size : " << airbuffer_radius << endl;
-
 
 	////////////////////////////////////////////
 	// Muon Veto (Plastic scintillator)
 	////////////////////////////////////////////
-	G4double PSlength[nPStype] = {longPSlength/2., shortPSlength/2.};
-	for(G4int PStype = 0; PStype < nPStype; PStype++){
-		// plastic scintillator
-		plasticScintBox[PStype] = new G4Box(Form("PlasticScint_Box%d",PStype), 
-				plastic_scintillator_thickness/2.,
-				PSlength[PStype] ,//- veto_frame_space,
-				plastic_veto_width/2. - veto_frame_thickness);// - veto_frame_space);
-		// aluminium plate
-		plasticScintHolderBox[PStype] = new G4Box(Form("AluminiumHolder_Box%d",PStype),
-				al_plate_thickness/2., 
-				PSlength[PStype],
-				plastic_veto_width/2. - veto_frame_thickness);
-		// air volume
-		plasticVetoAirBox[PStype] = new G4Box(Form("PlasticVetoAir_Box%d",PStype),
-				plastic_veto_thickness/2. - veto_frame_thickness,
-				PSlength[PStype],
-				plastic_veto_width/2. - veto_frame_thickness);
-		// muon veto box
-		plasticVetoBox[PStype] = new G4Box(Form("PlasticVeto_Box%d",PStype),
-				plastic_veto_thickness/2., 
-				PSlength[PStype] + veto_frame_thickness,// + veto_frame_space,
-				plastic_veto_width/2. );// + veto_frame_space);
-		plasticVetoCut[PStype] = new G4Box(Form("PlasticVetoCut%d",PStype),
-				plastic_veto_thickness/2.,
-				PSlength[PStype] + veto_frame_thickness - veto_frame_width,
-				plastic_veto_width/2. - veto_frame_width);
-
-		plasticVetoSolid1[PStype] = new G4SubtractionSolid(Form("PlasticVetoSolid1%d",PStype),
-				plasticVetoBox[PStype], plasticVetoCut[PStype],0,
-				{plastic_veto_thickness - veto_frame_thickness/2. + solidBooleanTol,0,0});
-		plasticVetoSolid[PStype] = new G4SubtractionSolid(Form("PlasticVetoSolid%d",PStype),
-				plasticVetoSolid1[PStype], plasticVetoCut[PStype],0,
-				{-plastic_veto_thickness + veto_frame_thickness/2. - solidBooleanTol,0,0});
-
-		plasticScintOLV[PStype] = new G4LogicalVolume(plasticScintBox[PStype], _vinylt, "PlasticScintO_LV");
-		plasticScintILV[PStype] = new G4LogicalVolume(plasticScintBox[PStype], _vinylt, "PlasticScintI_LV");
-		plasticScintOLV[PStype] -> SetVisAttributes(plasticScintVis);
-		plasticScintILV[PStype] -> SetVisAttributes(plasticScintVis);
-
-		aluminiumHolderLV[PStype] = new G4LogicalVolume(plasticScintHolderBox[PStype], _aluminium, "AluminiumHolder_LV");
-		aluminiumHolderLV[PStype]->SetVisAttributes(aluminiumVis);
-	}
-
 	// veto housing
-	plasticVetoHousing1Box = new G4Box("PlasticVetoHousing1_Box",
+	G4Box *plasticVetoHousing1Box = new G4Box("PlasticVetoHousing1_Box",
 			PS_housing_halfsize, PS_housing_halfsize, PS_housing_height/2.);
-	plasticVetoHousingSolid = new G4SubtractionSolid("PlasticVetoHousing_Solid", plasticVetoHousing1Box, IDspaceBox, 0,
+	G4VSolid *plasticVetoHousingSolid = new G4SubtractionSolid("PlasticVetoHousing_Solid", plasticVetoHousing1Box, IDspaceBox, 0,
 			G4ThreeVector(0, 0, plasticVetoHousing1Box->GetZHalfLength() - IDspaceBox->GetZHalfLength()));
-	plasticVetoHousing1LV = new G4LogicalVolume(plasticVetoHousingSolid, _air, "PlasticVetoHousing1_LV");
+	G4LogicalVolume *plasticVetoHousing1LV = new G4LogicalVolume(plasticVetoHousingSolid, _air, "PlasticVetoHousing1_LV");
 	plasticVetoHousing1LV->SetVisAttributes(G4VisAttributes::Invisible);
 
-	plasticVetoHousing2Box = new G4Box("PlasticVetoHousing2_Box",
-			bottom_veto_housingX/2., bottom_veto_housingY/2., (plastic_veto_thickness + profile_thickness)/2.);
-	plasticVetoHousing2LV = new G4LogicalVolume(plasticVetoHousing2Box, _air, "PlasticVetoHousing2_LV");
-	plasticVetoHousing2LV->SetVisAttributes(G4VisAttributes::Invisible);
+	G4Box *plasticVetoHousing2Box = new G4Box("PlasticVetoHousing2_Box",
+			bottom_veto_housingX/2., bottom_veto_housingY/2., plastic_veto_thickness/2.);
+	G4LogicalVolume *plasticVetoHousing2LV = new G4LogicalVolume(plasticVetoHousing2Box, _air, "PlasticVetoHousing2_LV");
+	//plasticVetoHousing2LV->SetVisAttributes(G4VisAttributes::Invisible);
 
-	// veto supporter (aluminium profile)
-	plasticVetoSupporterV1Box = new G4Box("PlasticVetoSupporterV1_Box",
-			profile_thickness/2., profile_thickness/2., PS_housing_height/2.);
-	plasticVetoSupporterV2Box = new G4Box("PlasticVetoSupporterV2_Box",
-			(profile_thickness - plastic_veto_thickness)/2., 
-			(profile_thickness - plastic_veto_thickness)/2., 
-			(PS_housing_height-(profile_thickness - plastic_veto_thickness))/2.);
-	plasticVetoSupporterH1Box = new G4Box("PlasticVetoSupporterH1_Box",
-			profile_thickness/2., shortPSlength/2., profile_thickness/2.);
-	plasticVetoSupporterH2Box = new G4Box("PlasticVetoSupporterH2_Box",
-			(profile_thickness - plastic_veto_thickness)/2.,
-			shortPSlength/4.,
-			(profile_thickness - plastic_veto_thickness)/2.);
-
-	plasticVetoSupporterV1LV = new G4LogicalVolume(plasticVetoSupporterV1Box, 
-			_alprofile, "PlasticVetoSupporterV1_LV");
-	plasticVetoSupporterV2LV = new G4LogicalVolume(plasticVetoSupporterV2Box, 
-			_alprofile, "PlasticVetoSupporterV2_LV");
-	plasticVetoSupporterH1LV = new G4LogicalVolume(plasticVetoSupporterH1Box, 
-			_alprofile, "PlasticVetoSupporterH1_LV");
-	plasticVetoSupporterH2LV = new G4LogicalVolume(plasticVetoSupporterH2Box, 
-			_alprofile, "PlasticVetoSupporterH2_LV");
-	plasticVetoSupporterV1LV->SetVisAttributes(aluminiumVis);
-	plasticVetoSupporterV2LV->SetVisAttributes(aluminiumVis);
-	plasticVetoSupporterH1LV->SetVisAttributes(aluminiumVis);
-	plasticVetoSupporterH2LV->SetVisAttributes(aluminiumVis);
 
 	////////////////////////////////////////////
-	// Muon Veto (Water Cherenkov)
+	// Muon Veto (Water Cerenkov)
 	////////////////////////////////////////////
 	// HAT Air ----------
-	shieldHatAirBox = new G4Box("HatAir_Box", HatInnerX, HatInnerY, HatInnerZ/2.);
-	shieldHatAirLV  = new G4LogicalVolume(shieldHatAirBox, _air, "HatAir_LV");
-
-	// HAT PE shield ----------
-	shieldHatPEBox = new G4Box("HatPEShield_Box", 
-			HatInnerX+nShield_hatWallThickness + boricacid_thickness, 
-			HatInnerY+nShield_hatWallThickness + boricacid_thickness, 
-			(HatInnerZ+nShield_hatWallThickness + boricacid_thickness)/2. );
-	shieldHatPELV  = new G4LogicalVolume(shieldHatPEBox, _polyethylene, "HatPEShield_LV");
-	shieldHatPELV  -> SetVisAttributes(shieldPE_VisAttr);
-
-	shieldHatAirBox1 = new G4Box("HatAir_Box1", 
+	G4Box *shieldHatAirBox = new G4Box("HatAir_Box", HatInnerX, HatInnerY, HatInnerZ/2.);
+	G4Box *shieldHatAirBox1 = new G4Box("HatAir_Box1", 
 			HatInnerX+waterhousing_thickness, HatInnerY+waterhousing_thickness, HatInnerZ/2.);
 
-	shieldWaterHousingBox = new G4Box("WaterHousing_Box",
+	// Hat Water Cerenkov Housing  -------------------
+	G4Box *shieldWaterHousingBox = new G4Box("WaterHousing_Box",
 			HatInnerX + waterhousing_thickness*2 + watertank_thickness,
 			HatInnerY + waterhousing_thickness*2 + watertank_thickness,
 			(HatInnerZ + waterhousing_thickness*2 + watertank_top_thickness+PMTroom_thickness)/2.);
+	G4VSolid *HatWaterHousingSolid = new G4SubtractionSolid("HatWaterHousing_Solid",shieldWaterHousingBox, shieldHatAirBox,0,
+			G4ThreeVector(0,0, -shieldWaterHousingBox->GetZHalfLength() + shieldHatAirBox->GetZHalfLength() ));
+	G4LogicalVolume *shieldWaterHousingLV = new G4LogicalVolume(HatWaterHousingSolid,_stainless, "HatWaterHousing_LV");
+	shieldWaterHousingLV -> SetVisAttributes(stainlessVis);
 
-	shieldWaterTankBox = new G4Box("WaterTank_Box",
+	// Air in Water Cerenkov Housing ----------------
+	G4Box *shieldWaterAirBox = new G4Box("WCAir_Box",
+			HatInnerX + waterhousing_thickness + watertank_thickness,
+			HatInnerY + waterhousing_thickness + watertank_thickness,
+			(HatInnerZ + watertank_top_thickness + PMTroom_thickness)/2.);
+	G4VSolid *HatWaterAirSolid = new G4SubtractionSolid("WCAir_Solid", shieldWaterAirBox, shieldHatAirBox1,0,
+			G4ThreeVector(0,0, -shieldWaterAirBox->GetZHalfLength() + shieldHatAirBox1->GetZHalfLength() ));
+	G4LogicalVolume *shieldWaterTankAirLV = new G4LogicalVolume(HatWaterAirSolid, _air, "HatWaterTankAir_LV");
+	shieldWaterTankAirLV->SetVisAttributes(G4VisAttributes::Invisible);
+
+	// Hat Water Tank --------------------------------
+	G4Box *shieldWaterTankBox = new G4Box("WaterTank_Box",
 			HatInnerX + waterhousing_thickness + watertank_thickness,
 			HatInnerY + waterhousing_thickness + watertank_thickness,
 			(HatInnerZ + watertank_top_thickness)/2.);
+	G4VSolid *HatWaterTankSolid = new G4SubtractionSolid("HatWaterTank_Solid", shieldWaterTankBox, shieldHatAirBox1,0,
+			G4ThreeVector(0,0, -shieldWaterTankBox->GetZHalfLength() + shieldHatAirBox1->GetZHalfLength() ));
+	G4LogicalVolume *shieldWaterTankLV = new G4LogicalVolume(HatWaterTankSolid, _water, "HatWaterTank_LV");
+	shieldWaterTankLV -> SetVisAttributes(shieldWaterTank_VisAttr);
 
-	shieldPMTroomBox = new G4Box("PMTroom_Box",
+	// PMT ROOM -------------------------------------
+	/*
+	G4Box *shieldPMTroomBox = new G4Box("PMTroom_Box",
 			HatInnerX + waterhousing_thickness + watertank_thickness,
 			HatInnerY + waterhousing_thickness + watertank_thickness,
 			PMTroom_thickness/2);
-
-	HatWaterHousingSolid = new G4SubtractionSolid("HatWaterHousing_Solid",shieldWaterHousingBox, shieldHatAirBox,0,
-			G4ThreeVector(0,0, -shieldWaterHousingBox->GetZHalfLength() + shieldHatAirBox->GetZHalfLength() ));
-
-	HatWaterTankSolid = new G4SubtractionSolid("HatWaterTank_Solid", shieldWaterTankBox, shieldHatAirBox1,0,
-			G4ThreeVector(0,0, -shieldWaterTankBox->GetZHalfLength() + shieldHatAirBox1->GetZHalfLength() ));
-
-	shieldWaterHousingLV = new G4LogicalVolume(HatWaterHousingSolid,_stainless, "HatWaterHousing_LV");
-	shieldWaterHousingLV -> SetVisAttributes(stainlessVis);
-
-	shieldWaterTankLV = new G4LogicalVolume(HatWaterTankSolid, _water, "HatWaterTank_LV");
-	shieldWaterTankLV -> SetVisAttributes(shieldWaterTank_VisAttr);
-
-	shieldPMTroomLV = new G4LogicalVolume(shieldPMTroomBox,_air,"HatPMTroom_LV");
+	G4LogicalVolume *shieldPMTroomLV = new G4LogicalVolume(shieldPMTroomBox,_air,"HatPMTroom_LV");
+	*/
 
 	// HAT H-beam ----------------
-	HatBeamHousingInBox = new G4Box("HatBeamHousing_Box",
+	G4Box *HatBeamHousingInBox = new G4Box("HatBeamHousing_Box",
 			HatInnerX - HatHBeam_size, HatInnerY - HatHBeam_size, (HatInnerZ - HatHBeam_size)/2.);
-	HatBeamHousingSolid = new G4SubtractionSolid("HatBeamHousingSolid",
+	G4VSolid *HatBeamHousingSolid = new G4SubtractionSolid("HatBeamHousingSolid",
 			shieldHatAirBox, HatBeamHousingInBox,0, G4ThreeVector(0,0,-HatHBeam_size/2.) );
-	HatBeamHousingLV = new G4LogicalVolume(HatBeamHousingSolid, _air, "HatBeamHousing_LV");
-	HatBeamHousingLV->SetVisAttributes(G4VisAttributes::Invisible);
+	G4LogicalVolume *HatBeamHousingLV = new G4LogicalVolume(HatBeamHousingSolid, _air, "HatBeamHousing_LV");
+	HatBeamHousingLV->SetVisAttributes(visAir);
 
-	HatBeamLong1Box = new G4Box("HatBeamLong1_Box",HatHBeam_size/2., HatHBeam_size/2., HatHBeam_heightL/2.);
-	HatBeamLong2Box = new G4Box("HatBeamLong2_Box",HatHBeam_size/2., HatHBeam_size/2., 
+	G4Box *HatBeamLong1Box = new G4Box("HatBeamLong1_Box",HatHBeam_size/2., HatHBeam_size/2., HatHBeam_heightL/2.);
+	G4Box *HatBeamLong2Box = new G4Box("HatBeamLong2_Box",HatHBeam_size/2., HatHBeam_size/2., 
 			HatHBeam_heightL/2.-HatHBeam_size);
-	HatBeamShortBox = new G4Box("HatBeamShort_Box",HatHBeam_size/2., HatHBeam_size/2., HatHBeam_heightS/2.);
-	HatBeamSpaceBox = new G4Box("HatBeamSpace_Box",
+	G4Box *HatBeamShortBox = new G4Box("HatBeamShort_Box",HatHBeam_size/2., HatHBeam_size/2., HatHBeam_heightS/2.);
+	G4Box *HatBeamSpaceBox = new G4Box("HatBeamSpace_Box",
 			HatHBeam_size/2.-HatHBeam_thickness, HatHBeam_size/2., HatHBeam_heightL);
-	HatBeamLong1Solid = new G4SubtractionSolid("HatBeamLong1_Solid0",
+	G4VSolid *HatBeamLong1Solid = new G4SubtractionSolid("HatBeamLong1_Solid0",
 			HatBeamLong1Box, HatBeamSpaceBox, 0, {0, -HatHBeam_size/2.-HatHBeam_in_thickness/2.,0});
 	HatBeamLong1Solid = new G4SubtractionSolid("HatBeamLong1_Solid",
 			HatBeamLong1Solid, HatBeamSpaceBox, 0, {0, HatHBeam_size/2.+HatHBeam_in_thickness/2.,0});
-	HatBeamLong2Solid = new G4SubtractionSolid("HatBeamLong2_Solid0",
+	G4VSolid *HatBeamLong2Solid = new G4SubtractionSolid("HatBeamLong2_Solid0",
 			HatBeamLong2Box, HatBeamSpaceBox, 0, {0, -HatHBeam_size/2.-HatHBeam_in_thickness/2.,0});
 	HatBeamLong2Solid = new G4SubtractionSolid("HatBeamLong2_Solid",
 			HatBeamLong2Solid, HatBeamSpaceBox, 0, {0, HatHBeam_size/2.+HatHBeam_in_thickness/2.,0});
-	HatBeamShortSolid = new G4SubtractionSolid("HatBeamShort_Solid0",
+	G4VSolid *HatBeamShortSolid = new G4SubtractionSolid("HatBeamShort_Solid0",
 			HatBeamShortBox, HatBeamSpaceBox, 0, {0, -HatHBeam_size/2.-HatHBeam_in_thickness/2.,0});
 	HatBeamShortSolid = new G4SubtractionSolid("HatBeamShort_Solid",
 			HatBeamShortSolid, HatBeamSpaceBox, 0, {0, HatHBeam_size/2.+HatHBeam_in_thickness/2., 0});
-	HatBeamLong1LV = new G4LogicalVolume(HatBeamLong1Solid, _iron1, "HatBeamLong1_LV");
-	HatBeamLong2LV = new G4LogicalVolume(HatBeamLong2Solid, _iron1, "HatBeamLong2_LV");
-	HatBeamShortLV = new G4LogicalVolume(HatBeamShortSolid, _iron1, "HatBeamShort_LV");
-	
+	G4LogicalVolume *HatBeamLong1LV = new G4LogicalVolume(HatBeamLong1Solid, _iron2, "HatBeamLong1_LV");
+	G4LogicalVolume *HatBeamLong2LV = new G4LogicalVolume(HatBeamLong2Solid, _iron2, "HatBeamLong2_LV");
+	G4LogicalVolume *HatBeamShortLV = new G4LogicalVolume(HatBeamShortSolid, _iron2, "HatBeamShort_LV");
+	HatBeamLong1LV->SetVisAttributes(ironVis);
+	HatBeamLong2LV->SetVisAttributes(ironVis);
+	HatBeamShortLV->SetVisAttributes(ironVis);
+
 	// HAT Aluminium plate -------
-	HatAlPlateInBox = new G4Box("HatAlPlateIn_Box",
+	G4Box *HatAlPlateInBox = new G4Box("HatAlPlateIn_Box",
 			HatInnerX - HatHBeam_size - HatAlPlate_thickness, 
 			HatInnerY - HatHBeam_size - HatAlPlate_thickness,
 			(HatInnerZ - HatHBeam_size - HatAlPlate_thickness)/2.);
-	HatAlPlateSolid = new G4SubtractionSolid("HatAlPlateSolid",
+	G4VSolid *HatAlPlateSolid = new G4SubtractionSolid("HatAlPlateSolid",
 			HatBeamHousingInBox, HatAlPlateInBox, 0, G4ThreeVector(0,0,-HatAlPlate_thickness/2.) );
 
-	HatAlPlateLV = new G4LogicalVolume(HatAlPlateSolid, _aluminium, "HatAlPlate_LV");
+	G4LogicalVolume *HatAlPlateLV = new G4LogicalVolume(HatAlPlateSolid, _aluminium, "HatAlPlate_LV");
 	HatAlPlateLV->SetVisAttributes(aluminiumVis);
 
 	// HAT Boric Acid ------------ 
-	shieldHatSpaceBox = new G4Box("HatBoric_Box",
+	G4Box *shieldHatSpaceBox = new G4Box("HatBoric_Box",
 			HatInnerX - HatHBeam_size - HatAlPlate_thickness - boricacid_thickness,
 			HatInnerY - HatHBeam_size - HatAlPlate_thickness - boricacid_thickness,
 			(HatInnerZ - HatHBeam_size - HatAlPlate_thickness - boricacid_thickness)/2.);
-	HatBoricAcidSolid = new G4SubtractionSolid("HatBoricAcid_Solid", HatAlPlateInBox, shieldHatSpaceBox, 0,
+	G4VSolid *HatBoricAcidSolid = new G4SubtractionSolid("HatBoricAcid_Solid", HatAlPlateInBox, shieldHatSpaceBox, 0,
 			G4ThreeVector(0,0,-boricacid_thickness/2.));
 
-	shieldHatBoricLV = new G4LogicalVolume(HatBoricAcidSolid, _BoricAcidRubber, "HatBoric_LV");
+	G4LogicalVolume *shieldHatBoricLV = new G4LogicalVolume(HatBoricAcidSolid, _BoricAcidRubber, "HatBoric_LV");
 	shieldHatBoricLV -> SetVisAttributes(boricAcidVisAttr);
 
 	// Detector supporting H-beam  
-	DetHbeamHousingBox = new G4Box("DetHbeamHousingBox",
+	G4Box *DetHbeamHousingBox = new G4Box("DetHbeamHousingBox",
 			shieldHatSpaceBox->GetXHalfLength(), shieldHatSpaceBox->GetYHalfLength(), shieldHatSpaceBox->GetZHalfLength()-DetHbeam_size/2.);
-	DetHbeamHousingLV = new G4LogicalVolume(DetHbeamHousingBox, _air, "DetHbeamHousing_LV");
+	G4LogicalVolume *DetHbeamHousingLV = new G4LogicalVolume(DetHbeamHousingBox, _air, "DetHbeamHousing_LV");
 	DetHbeamHousingLV->SetVisAttributes(G4VisAttributes::Invisible);
 
-	DetHbeamHBox = new G4Box("DetHbeamH_Box", DetHbeam_size/2., DetHbeam_size/2., shieldHatSpaceBox->GetYHalfLength());
-	DetHbeamVBox = new G4Box("DetHbeamV_Box", DetHbeam_size/2., DetHbeam_size/2., PS_housing_height/2.);
-	DetHbeamBox = new G4Box("DetHbeam_Box", DetHbeam_size/2., DetHbeam_size/2., DetHbeam_height/2.);
-	DetHbeamSBox = new G4Box("DetHbeamS_Box", DetHbeam_size/2., DetHbeam_size/2., DetHbeamS_height/2.);
-	DetHbeamMBox = new G4Box("DetHbeamM_Box", DetHbeam_size/2., DetHbeam_size/2., DetHbeamS_height/4.);
-	DetHbeamSpaceBox = new G4Box("DetHbeamSpace_Box", 
+	G4Box *DetHbeamHBox = new G4Box("DetHbeamH_Box", DetHbeam_size/2., DetHbeam_size/2., shieldHatSpaceBox->GetYHalfLength());
+	G4Box *DetHbeamVBox = new G4Box("DetHbeamV_Box", DetHbeam_size/2., DetHbeam_size/2., PS_housing_height/2.);
+	G4Box *DetHbeamBox = new G4Box("DetHbeam_Box", DetHbeam_size/2., DetHbeam_size/2., DetHbeam_height/2.);
+	G4Box *DetHbeamSBox = new G4Box("DetHbeamS_Box", DetHbeam_size/2., DetHbeam_size/2., DetHbeamS_height/2.);
+	G4Box *DetHbeamMBox = new G4Box("DetHbeamM_Box", DetHbeam_size/2., DetHbeam_size/2., DetHbeamS_height/4.);
+	G4Box *DetHbeamSpaceBox = new G4Box("DetHbeamSpace_Box", 
 			DetHbeam_size/2.-DetHbeam_thickness/2., DetHbeam_size/2.-DetHbeam_thickness,shieldHatSpaceBox->GetYHalfLength()*2);
 
-	DetHbeamSolid = new G4SubtractionSolid("DetHbeam1_Solid", DetHbeamBox, DetHbeamSpaceBox, 0,
+	G4VSolid *DetHbeamSolid = new G4SubtractionSolid("DetHbeam1_Solid", DetHbeamBox, DetHbeamSpaceBox, 0,
 			G4ThreeVector(-DetHbeam_size/2.,0,0));
 	DetHbeamSolid = new G4SubtractionSolid("DetHbeam_Solid", DetHbeamSolid, DetHbeamSpaceBox, 0,
 			G4ThreeVector(DetHbeam_size/2.,0,0));
-	DetHbeamLV = new G4LogicalVolume(DetHbeamSolid, _iron1, "DetHbeam_LV");
+	G4LogicalVolume *DetHbeamLV = new G4LogicalVolume(DetHbeamSolid, _iron2, "DetHbeam_LV");
+	DetHbeamLV->SetVisAttributes(ironVis);
 
-	DetHbeamSSolid = new G4SubtractionSolid("DetHbeam2_Solid", DetHbeamSBox, DetHbeamSpaceBox, 0,
+	G4VSolid *DetHbeamSSolid = new G4SubtractionSolid("DetHbeam2_Solid", DetHbeamSBox, DetHbeamSpaceBox, 0,
 			G4ThreeVector(-DetHbeam_size/2.,0,0));
 	DetHbeamSSolid = new G4SubtractionSolid("DetHbeamS_Solid", DetHbeamSSolid, DetHbeamSpaceBox, 0,
 			G4ThreeVector(DetHbeam_size/2.,0,0));
-	DetHbeamSLV = new G4LogicalVolume(DetHbeamSSolid, _iron1, "DetHbeamS_LV");
+	G4LogicalVolume *DetHbeamSLV = new G4LogicalVolume(DetHbeamSSolid, _iron2, "DetHbeamS_LV");
+	DetHbeamSLV->SetVisAttributes(ironVis);
 
-	DetHbeamMSolid = new G4SubtractionSolid("DetHbeam3_Solid", DetHbeamMBox, DetHbeamSpaceBox, 0,
+	G4VSolid *DetHbeamMSolid = new G4SubtractionSolid("DetHbeam3_Solid", DetHbeamMBox, DetHbeamSpaceBox, 0,
 			G4ThreeVector(-DetHbeam_size/2.,0,0));
 	DetHbeamMSolid = new G4SubtractionSolid("DetHbeamM_Solid", DetHbeamMSolid, DetHbeamSpaceBox, 0,
 			G4ThreeVector(DetHbeam_size/2.,0,0));
-	DetHbeamMLV = new G4LogicalVolume(DetHbeamMSolid, _iron1, "DetHbeamM_LV");
+	G4LogicalVolume *DetHbeamMLV = new G4LogicalVolume(DetHbeamMSolid, _iron2, "DetHbeamM_LV");
+	DetHbeamMLV->SetVisAttributes(ironVis);
 
-	DetHbeamHSolid = new G4SubtractionSolid("DetHbeam4_Solid", DetHbeamHBox, DetHbeamSpaceBox, 0,
+	G4VSolid *DetHbeamHSolid = new G4SubtractionSolid("DetHbeam4_Solid", DetHbeamHBox, DetHbeamSpaceBox, 0,
 			G4ThreeVector(-DetHbeam_size/2.,0,0));
 	DetHbeamHSolid = new G4SubtractionSolid("DetHbeamH_Solid", DetHbeamHSolid, DetHbeamSpaceBox, 0,
 			G4ThreeVector(DetHbeam_size/2.,0,0));
-	DetHbeamHLV = new G4LogicalVolume(DetHbeamHSolid, _iron1, "DetHbeamH_LV");
+	G4LogicalVolume *DetHbeamHLV = new G4LogicalVolume(DetHbeamHSolid, _iron2, "DetHbeamH_LV");
+	DetHbeamHLV->SetVisAttributes(ironVis);
 
-	DetHbeamVSolid = new G4SubtractionSolid("DetHbeam5_Solid", DetHbeamVBox, DetHbeamSpaceBox, 0,
+	G4VSolid *DetHbeamVSolid = new G4SubtractionSolid("DetHbeam5_Solid", DetHbeamVBox, DetHbeamSpaceBox, 0,
 			G4ThreeVector(-DetHbeam_size/2.,0,0));
 	DetHbeamVSolid = new G4SubtractionSolid("DetHbeamV_Solid", DetHbeamVSolid, DetHbeamSpaceBox, 0,
 			G4ThreeVector(DetHbeam_size/2.,0,0));
-	DetHbeamVLV = new G4LogicalVolume(DetHbeamVSolid, _iron1, "DetHbeamV_LV");
+	G4LogicalVolume *DetHbeamVLV = new G4LogicalVolume(DetHbeamVSolid, _iron2, "DetHbeamV_LV");
+	DetHbeamVLV->SetVisAttributes(ironVis);
 
 	//////////////////////////////////////////
 	// Cavern and Rock geometry options
 	//////////////////////////////////////////
-	if (fNeutronMode) { /// for neutron simulation
-		fRockPhysical  = nullptr;
-		fFloorPhysical = nullptr;
+	G4VSolid *cavern_solid = nullptr;
+	G4LogicalVolume *logiCavern = nullptr;
+	G4VPhysicalVolume *physCavern = nullptr;
+	G4ThreeVector cavern_tlate = G4ThreeVector(0);
 
+	G4Sphere *neutronmodeCavern = nullptr;
+	G4Sphere *hemiSphereCavern = nullptr;
+
+	G4Box *cavernLoafBox = nullptr;
+	G4Tubs *cavernMainPizza = nullptr;
+	G4Tubs *cavernSubPizza = nullptr;
+
+	if (fNeutronMode) { /// for neutron simulation
 		neutronmodeCavern = new G4Sphere("cavern_solid", 0, cavern_nMode_radius, 0., 360. * deg, 0, 180. * deg);
 		cavern_solid = neutronmodeCavern;
 		logiCavern   = new G4LogicalVolume(cavern_solid, _air, "logiCavern");
 		logiCavern  -> SetVisAttributes(G4VisAttributes::Invisible);
 		physCavern   = new G4PVPlacement(nullptr, {}, logiCavern, "physCavern", logiWorld, false, 0, OverlapCheck);
-	} 
-	else if (fRockgammaMode) { /// for rock gammna simulation
-		fFloorPhysical = nullptr;
-		logiCavern = nullptr;
-		physCavern = nullptr;
-
+	} 	else if (fRockgammaMode) { /// for rock gammna simulation
 		fRockPhysical  = new G4PVPlacement(NULL, {0,0,0}, logiRockShell, 
 				"physRock", logiWorld, false, 0, OverlapCheck);
 		new G4PVPlacement(NULL, {0, 0, RockBox->GetZHalfLength() - rockshell_thickness/2.}, logiTopRock,  
@@ -688,94 +465,90 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 		new G4PVPlacement(NULL, 
 				{0, 0, RockBox->GetZHalfLength() - rockshell_thickness - shieldHousingBox->GetZHalfLength()}, shieldHousingLV,
 				"shieldHousingPV", logiRockShell, false, 0, OverlapCheck);
-	}
-	else { /// for muon and internal/external background simulation
-		rockTlate = G4ThreeVector(0, 0, 0);
-		rockFloorTlate = G4ThreeVector(0, 0, - rock_floor_thickness);
+	}	else { /// for muon and internal/external background simulation
+		G4ThreeVector rockTlate = G4ThreeVector(0, 0, 0);
+		G4ThreeVector rockFloorTlate = G4ThreeVector(0, 0, - rock_floor_thickness);
 
+		//new G4PVPlacement(NULL, rockTlate, logiVirtualRock, "physVirtualRock", logiWorld, false, 0, OverlapCheck);
 		fRockPhysical = new G4PVPlacement(NULL, rockTlate, logiRock, 
 				"physRock", logiWorld, false, 0, OverlapCheck);
+				//"physRock", logiVirtualRock, false, 0, OverlapCheck);
 		fFloorPhysical = new G4PVPlacement(nullptr, rockFloorTlate, logiFloor, 
 				"physFloor",logiWorld, false, 0, OverlapCheck);
 		AmoreEventAction::SetPrimSkew(rockTlate);
 
 		switch (whichCavernType) {
-			case kCavern_Toy_HemiSphere:{
-																		hemiSphereCavern = new G4Sphere("cavern_solid", 0, 
-																				cavern_sphere_radius, 0, 360 * deg, 0, 90 * deg);
-																		cavern_solid     = hemiSphereCavern;
-
-																		logiCavern = new G4LogicalVolume(cavern_solid, _air, "logiCavern");
-																		physCavern = new G4PVPlacement(nullptr, cavern_tlate, 
-																				logiCavern, "physCavern",logiRock, false, OverlapCheck);
-
-																		break;
-																	}
-
 			case kCavern_Toy_Cylinder:{
-																	G4Exception(__PRETTY_FUNCTION__, "CAVERN", G4ExceptionSeverity::FatalException,
-																			"Cavern type of cylinder toy model hasn't been implemented in AMoRE-II.");
-																	return nullptr;
-																	break;
-																}
-
+				G4Exception(__PRETTY_FUNCTION__, "CAVERN", G4ExceptionSeverity::FatalException,
+				"Cavern type of cylinder toy model hasn't been implemented in AMoRE-II.");
+				return nullptr;
+				break;
+			}
+			case kCavern_Toy_HemiSphere:{
+				hemiSphereCavern = new G4Sphere("cavern_solid", 0, 
+				cavern_sphere_radius, 0, 360 * deg, 0, 90 * deg);
+				cavern_solid     = hemiSphereCavern;
+				break;
+			}
 			case kCavern_RealModel:{
-															 cavernLoafBox = new G4Box("CavernLoafBox", 
-																	 cavern_loaf_thickness / 2., 
-																	 cavern_loaf_width / 2., 
-																	 cavern_loaf_totalheight / 2.);
-															 cavernMainPizza = new G4Tubs("CavernMainPizza", 0, 
-																	 cavern_pizza_radius,
-																	 cavern_pizza_thickness / 2., 0,
-																	 cavern_pizza_angle_real + cavern_pizza_angle_tol * 2.);
-															 cavernSubPizza  = new G4Tubs("CavernSubPizza", 0, 
-																	 cavern_subpizza_radius,
-																	 cavern_pizza_thickness / 2., 0,
-																	 cavern_pizza_angle_real + cavern_pizza_angle_tol * 2.);
+				G4double cavern_loaf_width = (cavern_subpizza_radius +
+					(cavern_pizza_radius - cavern_subpizza_radius) * std::sin(cavern_pizza_angle_real / 2.)) * 2.;
+				G4double cavern_loaf_totalheight = cavern_loaf_height;
 
-															 pizzaAlignRotMtx = new G4RotationMatrix();
-															 pizzaAlignRotMtx->rotateY(90 * deg);
-															 pizzaAlignRotMtx->rotateZ(cavern_subpizza_angle / 2. + cavern_pizza_angle_tol);
-															 pizzaPart1RotMtx = new G4RotationMatrix();
-															 pizzaPart1RotMtx->rotateZ(cavern_subpizza_angle + cavern_pizza_angle_tol);
-															 pizzaPart2RotMtx = new G4RotationMatrix();
-															 pizzaPart2RotMtx->rotateZ(-cavern_subpizza_angle - cavern_pizza_angle_tol);
-															 pizzaTlateInLoaf = G4ThreeVector(0, 0, -cavern_loaf_totalheight / 2. - cavern_totalpizza_dist);
+				cavernLoafBox = new G4Box("CavernLoafBox", 
+					cavern_loaf_thickness / 2., cavern_loaf_width / 2., cavern_loaf_totalheight / 2.);
+				cavernMainPizza = new G4Tubs("CavernMainPizza", 0, 
+					cavern_pizza_radius,
+					cavern_pizza_thickness / 2., 0,
+					cavern_pizza_angle_real + cavern_pizza_angle_tol * 2.);
+				cavernSubPizza  = new G4Tubs("CavernSubPizza", 0, 
+					cavern_subpizza_radius,
+					cavern_pizza_thickness / 2., 0,
+					cavern_pizza_angle_real + cavern_pizza_angle_tol * 2.);
 
-															 pizzaUnionStage1 = new G4UnionSolid("PizzaUnion1_Solid", 
-																	 cavernMainPizza, cavernSubPizza, pizzaPart1RotMtx,
-																	 G4ThreeVector(cavern_pizza_radius - cavern_subpizza_radius, 0, 0)
-																	 .rotateZ(cavern_pizza_angle_tol));
-															 pizzaUnionStage2 = new G4UnionSolid("PizzaUnion2_Solid", 
-																	 pizzaUnionStage1, cavernSubPizza, pizzaPart2RotMtx,
-																	 G4ThreeVector(cavern_pizza_radius - cavern_subpizza_radius, 0, 0)
-																	 .rotateZ(cavern_pizza_angle_real + cavern_pizza_angle_tol));
-															 pizzaUnionStage3 = new G4SubtractionSolid("PizzaUnion3_Solid",
-																	 pizzaUnionStage2, cavernLoafBox,pizzaAlignRotMtx,{0,0,0});
+				G4RotationMatrix *pizzaAlignRotMtx = new G4RotationMatrix();
+				pizzaAlignRotMtx->rotateY(90 * deg);
+				pizzaAlignRotMtx->rotateZ(cavern_subpizza_angle / 2. + cavern_pizza_angle_tol);
 
-															 cavernFinalSolid = new G4UnionSolid("CavernFinalSolid", 
-																	 cavernLoafBox, pizzaUnionStage3,pizzaAlignRotMtx, pizzaTlateInLoaf);
+				G4RotationMatrix *pizzaPart1RotMtx = new G4RotationMatrix();
+				pizzaPart1RotMtx->rotateZ(cavern_subpizza_angle + cavern_pizza_angle_tol);
 
-															 cavern_solid = cavernFinalSolid;
+				G4RotationMatrix *pizzaPart2RotMtx = new G4RotationMatrix();
+				pizzaPart2RotMtx->rotateZ(-cavern_subpizza_angle - cavern_pizza_angle_tol);
 
-															 cavern_tlate       = G4ThreeVector(0, 0, cavern_loaf_totalheight / 2.);
-															 logiCavern = new G4LogicalVolume(cavern_solid, _air, "logiCavern");
-															 //physCavern = new G4PVPlacement(nullptr, {0,0,-rockthick/2.}, 
-															 //logiCavern, "physCavern", Rock_LV, false, OverlapCheck);
-															 physCavern = new G4PVPlacement(nullptr, cavern_tlate, 
-																	 logiCavern, "physCavern", logiRock, false, OverlapCheck);
+				G4ThreeVector pizzaTlateInLoaf = G4ThreeVector(0, 0, 
+					-cavern_loaf_totalheight / 2. - cavern_totalpizza_dist);
 
-															 break;
-														 }
+				G4UnionSolid *pizzaUnionStage1 = new G4UnionSolid("PizzaUnion1_Solid", 
+					cavernMainPizza, cavernSubPizza, pizzaPart1RotMtx,
+					G4ThreeVector(cavern_pizza_radius - cavern_subpizza_radius, 0, 0)
+						.rotateZ(cavern_pizza_angle_tol));
+				G4UnionSolid *pizzaUnionStage2 = new G4UnionSolid("PizzaUnion2_Solid", 
+					pizzaUnionStage1, cavernSubPizza, pizzaPart2RotMtx,
+					G4ThreeVector(cavern_pizza_radius - cavern_subpizza_radius, 0, 0)
+						.rotateZ(cavern_pizza_angle_real + cavern_pizza_angle_tol));
+				G4SubtractionSolid *pizzaUnionStage3 = new G4SubtractionSolid("PizzaUnion3_Solid",
+					pizzaUnionStage2, cavernLoafBox,pizzaAlignRotMtx,{0,0,0});
 
+				G4UnionSolid *cavernFinalSolid = new G4UnionSolid("CavernFinalSolid", 
+					cavernLoafBox, pizzaUnionStage3,pizzaAlignRotMtx, pizzaTlateInLoaf);
+
+				cavern_solid = cavernFinalSolid;
+
+				cavern_tlate = G4ThreeVector(0, 0, cavern_loaf_totalheight / 2.);
+				break;
+			}
 			default:{
-								G4Exception(__PRETTY_FUNCTION__, "CAVERN",
-										G4ExceptionSeverity::FatalErrorInArgument, "Cavern type is wrong.");
-								return nullptr;
-							}
+				G4Exception(__PRETTY_FUNCTION__, "CAVERN",
+				G4ExceptionSeverity::FatalErrorInArgument, "Cavern type is wrong.");
+				return nullptr;
+			}
 		}
-		fCavernPhysical = physCavern;
+		logiCavern = new G4LogicalVolume(cavern_solid, _air, "logiCavern");
 		logiCavern->SetVisAttributes(visCavern);
+		physCavern = new G4PVPlacement(nullptr, cavern_tlate, 
+				logiCavern, "physCavern",logiRock, false, OverlapCheck);
+		fCavernPhysical = physCavern;
 	}
 
 	//////////////////////////////////////////
@@ -783,20 +556,17 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 	//////////////////////////////////////////
 
 	// Muon veto housing ------------
+	G4PVPlacement *vetoHousing1PV = nullptr;
+	G4PVPlacement *vetoHousing2PV = nullptr;
 	if(fNeutronMode){
 		vetoHousing1PV = new G4PVPlacement(nullptr, 
-				{0, 0, -plasticVetoHousing1Box->GetZHalfLength()},
+				{0, 0, - plasticVetoHousing1Box->GetZHalfLength() - nShield_GapFromCeiling},
 				plasticVetoHousing1LV, "PlasticVetoHousing_PV", logiCavern, false, 0, 0);
 		vetoHousing2PV = new G4PVPlacement(nullptr,
-				{0, 0, -plasticVetoHousing1Box->GetZHalfLength()*2 - HBeam_size 
+				{0, 0, -plasticVetoHousing1Box->GetZHalfLength()*2 - nShield_GapFromCeiling - HBeam_size 
 				- plasticVetoHousing2Box->GetZHalfLength()},
 				plasticVetoHousing2LV, "PlasticVetoHousing2_PV", logiCavern, false, 0, 0);
-	}
-	else if(fRockgammaMode){
-		vetoHousing1PV = nullptr;
-		vetoHousing2PV = nullptr;
-	}
-	else{
+	} else if(!fRockgammaMode){
 		vetoHousing1PV = new G4PVPlacement(nullptr, 
 				{0, 0, -plasticVetoHousing1Box->GetZHalfLength()},
 				plasticVetoHousing1LV, "PlasticVetoHousing_PV", logiCavern, false, 0, 0);
@@ -806,17 +576,17 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 	}
 
 	// PE shield --------------------
+	G4PVPlacement *shieldPEPV;
 	if(fRockgammaMode){
 		shieldPEPV = new G4PVPlacement(nullptr, {0, 0, -sst_zsize_half-ovc_gap/2.},
 				shieldPELV, "PEShield_PV", shieldHousingLV, false, 0, OverlapCheck);
-	}
-	else{
+	} else{
 		shieldPEPV = new G4PVPlacement(nullptr, {0, 0, 0},
 				shieldPELV, "PEShield_PV", plasticVetoHousing1LV, false, 0, OverlapCheck);
 	}
 
 	// BoricAcid Shield -------------
-	shieldBoricAcidPV = new G4PVPlacement(nullptr,
+	G4PVPlacement *shieldBoricAcidPV = new G4PVPlacement(nullptr,
 			G4ThreeVector(0, 0, PE_shield_thickness / 2.),
 			shieldBoricAcidLV, "BoricAcidShield_PV", shieldPELV, false, 0, OverlapCheck);
 
@@ -825,241 +595,47 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 			{0, 0, boricacid_thickness / 2.},
 			leadHousingLV, "LeadShield_PV", shieldBoricAcidLV, false, 0, OverlapCheck);
 
-	BufferMother = new G4PVPlacement(nullptr,	{}, 
+	G4VPhysicalVolume *BufferMother = new G4PVPlacement(nullptr,	{}, 
 			leadShieldLV, "LeadShield_PV", leadHousingLV, false, 0, OverlapCheck);
 
-	// Copper shield -----------
+	// Thin Lead shield -----------
 	new G4PVPlacement(nullptr,{0,0,lead_shield_thickness/2.},
-			CuShieldLV, "CopperShield_PV", leadShieldLV, false, 0, OverlapCheck);
+			ThinLeadShieldLV, "ThinLeadShield_PV", leadShieldLV, false, 0, OverlapCheck);
 
 	// Boric Acid ----------
-	new G4PVPlacement(nullptr,{0, 0, copper_shield_thickness/2.}, 
-			boricAcidLV, "InnerBoricAcid_PV", CuShieldLV, false, 0, OverlapCheck);
+	new G4PVPlacement(nullptr,{0, 0, thin_lead_shield_thickness/2.}, 
+			boricAcidLV, "InnerBoricAcid_PV", ThinLeadShieldLV, false, 0, OverlapCheck);
 
-	//////////////////////////////////////////
-	// Muon Veto (Plastic scintillator) ----------
-	//////////////////////////////////////////
-	G4double posX[8] = { // plastic veto module x-position
-		PS_housing_halfsize - profile_thickness - plastic_veto_thickness/2., 
-		PS_housing_halfsize - profile_thickness - plastic_veto_thickness/2.,
-		PS_housing_halfsize - profile_thickness - plastic_veto_thickness - longPSlength/2. - veto_frame_thickness,
-		-PS_housing_halfsize + profile_thickness + plastic_veto_thickness + longPSlength/2. + veto_frame_thickness,
-		-PS_housing_halfsize + profile_thickness + plastic_veto_thickness/2.,
-		-PS_housing_halfsize + profile_thickness + plastic_veto_thickness/2.,
-		-PS_housing_halfsize + profile_thickness + plastic_veto_thickness + longPSlength/2. + veto_frame_thickness,
-		PS_housing_halfsize - profile_thickness - plastic_veto_thickness - longPSlength/2. - veto_frame_thickness};
-	G4double posY[8] = { // plastic veto module y-position
-		-PS_housing_halfsize + profile_thickness + longPSlength/2. + veto_frame_thickness,
-		PS_housing_halfsize - profile_thickness - longPSlength/2. - veto_frame_thickness,
-		PS_housing_halfsize - profile_thickness - plastic_veto_thickness/2.,
-		PS_housing_halfsize - profile_thickness - plastic_veto_thickness/2.,
-		PS_housing_halfsize - profile_thickness - longPSlength/2. - veto_frame_thickness,
-		-PS_housing_halfsize + profile_thickness + longPSlength/2. + veto_frame_thickness,
-		-PS_housing_halfsize + profile_thickness + plastic_veto_thickness/2.,
-		-PS_housing_halfsize + profile_thickness + plastic_veto_thickness/2.};
 
-	int sign1[8] = {1,1,0,0,-1,-1,0,0};
-	int sign2[8] = {0,0,1,1,0,0,-1,-1};
-	int sign3[8] = {-1,1,0,0,1,-1,0,0};
-	G4RotationMatrix *psRotMtx = new G4RotationMatrix();
-	//G4int nVetoZ = (PS_housing_height-plastic_veto_thickness)/plastic_veto_width;
-	//G4int nVetoV = (PS_housing_height-plastic_veto_thickness)/longPSlength;
-	//G4int nVetoB = bottom_veto_housing_x/plastic_veto_width; 
-	G4int nVetoZ = PS_housing_height/plastic_veto_width;
-	G4int nVetoV = PS_housing_height/longPSlength;
-	G4int nVetoB = bottom_veto_housingX/plastic_veto_width; 
-	f200_VetoTotCNum = nVetoZ*8 + nVetoB*2;
-	f200_HatVetoTotCNum = 1;// water tank
-	f200_TotalVetoCNum = f200_VetoTotCNum + f200_HatVetoTotCNum;
 
-	G4LogicalVolume *plasticVetoLV[f200_VetoTotCNum];
-	G4LogicalVolume *plasticVetoAirLV[f200_VetoTotCNum];
-	for(int ipos = 0; ipos < 8; ipos++){
-		// Plastic Veto Supporter............................
-		new G4PVPlacement(nullptr, 
-				{ posX[ipos] + sign1[ipos]*(profile_thickness + plastic_veto_thickness)/2. 
-				+ sign2[ipos]*(shortPSlength + profile_thickness)/2.,
-				posY[ipos] + sign3[ipos]*(longPSlength - profile_thickness)/2. 
-				+ sign2[ipos]*(profile_thickness + plastic_veto_thickness)/2.,
-				0},
-				plasticVetoSupporterV1LV, "VetoSupporterV1_PV", plasticVetoHousing1LV, false, 0, OverlapCheck);
-		new G4PVPlacement(nullptr, 
-				{ posX[ipos] + sign1[ipos]*(profile_thickness + plastic_veto_thickness)/2. 
-				- sign2[ipos]*(shortPSlength + profile_thickness)/2.,
-				posY[ipos] + sign3[ipos]*(longPSlength/2. - 3.*profile_thickness/2. - shortPSlength) 
-				+ sign2[ipos]*(profile_thickness + plastic_veto_thickness)/2.,
-				0},
-				plasticVetoSupporterV1LV, "VetoSupporterV1_PV", plasticVetoHousing1LV, false, 0, OverlapCheck);
+	// Upper part positioning --------------------------
+	G4PVPlacement *shieldWaterHousingPV = nullptr;
+	G4PVPlacement *shieldWaterTankAirPV = nullptr;
+	G4PVPlacement *shieldWaterTankPV = nullptr;
+	G4PVPlacement *HatAlPlatePV = nullptr;
+	G4PVPlacement *shieldHatBoricPV = nullptr;
+	G4PVPlacement *HatBeamHousingPV = nullptr;
+	G4PVPlacement *DetHbeamHousingPV = nullptr;
+	G4PVPlacement *DetHbeamHPV[4] = {nullptr};
+	G4PVPlacement *DetHbeamVPV[8] = {nullptr};
 
-		new G4PVPlacement(G4Transform3D(*psRotMtx, G4ThreeVector(
-						posX[ipos] + sign1[ipos]*(profile_thickness + plastic_veto_thickness)/2.,
-						posY[ipos] + sign3[ipos]*(longPSlength/2. - profile_thickness - shortPSlength/2.) 
-						+ sign2[ipos]*(profile_thickness + plastic_veto_thickness)/2.,
-						PS_housing_height/2.- profile_thickness/2.)),
-				plasticVetoSupporterH1LV, "VetoSupporterH1_PV", plasticVetoHousing1LV, false, 0, OverlapCheck);
-
-		if( ipos == 0 || ipos == 4 ) {
-			new G4PVPlacement(G4Transform3D(*psRotMtx, G4ThreeVector(
-							posX[ipos] + sign1[ipos]*(plastic_veto_thickness + profile_thickness/2.),
-							sign2[ipos]*posY[ipos], 
-							PS_housing_height/2.- (profile_thickness-plastic_veto_thickness)/2.)),
-					plasticVetoSupporterH2LV, "VetoSupporterH2_PV", plasticVetoHousing1LV, false, 0, OverlapCheck);
-
-			new G4PVPlacement(nullptr, G4ThreeVector(
-						posX[ipos] + sign1[ipos]*(plastic_veto_thickness + profile_thickness/2.),
-						sign2[ipos]*posY[ipos], 
-						-(profile_thickness-plastic_veto_thickness)/2.),
-					plasticVetoSupporterV2LV, "VetoSupporterV2_PV", plasticVetoHousing1LV, false, 0, OverlapCheck);
-		}
-
-		// Plastic Veto Module ...................................
-		for(int ips = 0; ips < nVetoZ; ips++){
-			int ith = ipos*nVetoZ+ips;
-			plasticVetoAirLV[ith] = new G4LogicalVolume(plasticVetoAirBox[0], _air, "PlasticVetoAir_LV");
-			plasticVetoLV[ith] = new G4LogicalVolume(plasticVetoSolid[0], _stainless, "PlasticVeto_LV");
-			plasticVetoLV[ith]->SetVisAttributes(stainlessVis);
-
-			new G4PVPlacement(G4Transform3D(*psRotMtx,G4ThreeVector(
-							posX[ipos], posY[ipos], 
-							PS_housing_height/2.-(ips*2+1)*plastic_veto_width/2.)),
-					plasticVetoLV[ith], Form("PlasticVeto%d_PV",ith), plasticVetoHousing1LV,
-					false, 0, OverlapCheck);
-
-			new G4PVPlacement(nullptr, G4ThreeVector(0.,0.,0.), plasticVetoAirLV[ith], 
-					Form("PlasticVetoAir%d_PV", ith), plasticVetoLV[ith],false, 0, OverlapCheck);
-
-			new G4PVPlacement(nullptr, G4ThreeVector(
-						plastic_veto_thickness/2. - veto_frame_thickness - al_plate_thickness/2.,0,0), 
-					aluminiumHolderLV[0], Form("AluminiumHolder%d_PV", ith), plasticVetoAirLV[ith], false, 0, OverlapCheck);
-			new G4PVPlacement(nullptr, G4ThreeVector(
-						-plastic_veto_thickness/2. + veto_frame_thickness + al_plate_thickness/2.,0,0), 
-					aluminiumHolderLV[0], Form("AluminiumHolder%d_PV", ith), plasticVetoAirLV[ith], false, 0, OverlapCheck);
-
-			new G4PVPlacement(nullptr, G4ThreeVector(
-						plastic_veto_thickness/2. - veto_frame_thickness - al_plate_thickness - plastic_scintillator_thickness/2.,
-						0, 0), 
-					plasticScintOLV[0], Form("PlasticScintO%d_PV",ith), plasticVetoAirLV[ith], false, 0, OverlapCheck);
-			new G4PVPlacement(nullptr, G4ThreeVector(
-						-plastic_veto_thickness/2. + veto_frame_thickness + al_plate_thickness + plastic_scintillator_thickness/2.,
-						0, 0),
-					plasticScintILV[0], Form("PlasticScintI%d_PV",ith), plasticVetoAirLV[ith], false, 0, OverlapCheck);
-		}
-
-		if( ipos % 2 != 0 ) {	psRotMtx->rotateZ(-90*deg);}
-	}
-
-	// Bottom Plastic Veto module ..........................
-	G4RotationMatrix *bpsRotMtx = new G4RotationMatrix();
-	G4ThreeVector bpsPos = G4ThreeVector(bottom_veto_housingX/2.-plastic_veto_width/2.,
-			bottom_veto_housingY/2.- PSlength[0]-veto_frame_thickness,
-			profile_thickness/2.);
-	bpsRotMtx->rotateY(90*deg);
-	for(int ips = 0; ips < 2*nVetoB; ips++){
-		int ith = 8*nVetoZ + ips;
-		if(ips==nVetoB) {
-			bpsPos = G4ThreeVector(bottom_veto_housingX/2.-plastic_veto_width/2.,
-					-bottom_veto_housingY/2.+ PSlength[0]+veto_frame_thickness,
-					profile_thickness/2.);
-		}
-		plasticVetoAirLV[ith] = new G4LogicalVolume(plasticVetoAirBox[0], _air, "PlasticVetoAir_LV");
-		plasticVetoLV[ith] = new G4LogicalVolume(plasticVetoSolid[0], _stainless, "PlasticVeto_LV");
-		plasticVetoLV[ith]->SetVisAttributes(stainlessVis);
-
-		new G4PVPlacement(G4Transform3D(*bpsRotMtx, bpsPos),
-				plasticVetoLV[ith], Form("PlasticVeto%d_PV",ith), plasticVetoHousing2LV, false, 0, OverlapCheck);
-
-		new G4PVPlacement(nullptr, G4ThreeVector(0.,0.,0.), plasticVetoAirLV[ith], 
-				Form("PlasticVetoAir%d_PV", ith), plasticVetoLV[ith],false, 0, OverlapCheck);
-		new G4PVPlacement(nullptr, G4ThreeVector(
-					plastic_veto_thickness/2. - veto_frame_thickness - al_plate_thickness/2.,0,0), 
-				aluminiumHolderLV[0], Form("AluminiumHolder%d_PV", ith), plasticVetoAirLV[ith], false, 0, OverlapCheck);
-		new G4PVPlacement(nullptr, G4ThreeVector(
-					-plastic_veto_thickness/2. + veto_frame_thickness + al_plate_thickness/2.,0,0), 
-				aluminiumHolderLV[0], Form("AluminiumHolder%d_PV", ith), plasticVetoAirLV[ith], false, 0, OverlapCheck);
-
-		new G4PVPlacement(nullptr, G4ThreeVector(
-					plastic_veto_thickness/2. - veto_frame_thickness - al_plate_thickness - plastic_scintillator_thickness/2.,
-					0, 0), 
-				plasticScintOLV[0], Form("PlasticScintO%d_PV",ith), plasticVetoAirLV[ith], false, 0, OverlapCheck);
-		new G4PVPlacement(nullptr, G4ThreeVector(
-					-plastic_veto_thickness/2. + veto_frame_thickness + al_plate_thickness + plastic_scintillator_thickness/2.,
-					0, 0),
-				plasticScintILV[0], Form("PlasticScintI%d_PV",ith), plasticVetoAirLV[ith], false, 0, OverlapCheck);
-
-		bpsPos[0] -= plastic_veto_width;
-	}
-
-	f200_logiVetoPSO = *plasticScintOLV;
-	f200_logiVetoPSI = *plasticScintILV;
-
-	if(fRockgammaMode){ // For Rock gamma mode, there are no shield for upper part.
-		shieldWaterHousingPV = nullptr;
-		shieldWaterTankPV = nullptr;
-		shieldPMTroomPV = nullptr;
-		shieldHatBoricPV = nullptr;
-		HatBeamHousingPV = nullptr;
-		HatAlPlatePV = nullptr;
-		DetHbeamHousingPV = nullptr;
-		DetHbeamHPV[0] = DetHbeamHPV[1] = DetHbeamHPV[2] = DetHbeamHPV[3] = nullptr;
-		DetHbeamVPV[0] = DetHbeamVPV[1] = DetHbeamVPV[2] = DetHbeamVPV[3] = nullptr;
-		DetHbeamVPV[4] = DetHbeamVPV[5] = DetHbeamVPV[6] = DetHbeamVPV[7] = nullptr;
-
-		shieldWaterHousingPV = shieldWaterTankPV = shieldPMTroomPV = shieldHatBoricPV = nullptr;
-		HatBeamHousingPV = HatAlPlatePV = nullptr;
-	}
-	else{ // Upper part shields.
-		// Hat Water cherenkov detector ----------
+	if(!fRockgammaMode) { // Upper part shields.
+		// Hat Water cerenkov detector ----------
 		shieldWaterHousingPV = new G4PVPlacement( nullptr,
 				{0,0,shieldWaterHousingBox->GetZHalfLength() + nShield_hatGapFromLead + solidBooleanTol},
 				shieldWaterHousingLV,"HatWaterHousing_PV",logiCavern, false, 0, 0);
+		shieldWaterTankAirPV = new G4PVPlacement( nullptr,
+				{0,0,0},
+				shieldWaterTankAirLV, "HatWaterTankAir_PV", shieldWaterHousingLV, false, 0, 0);
 		shieldWaterTankPV = new G4PVPlacement( nullptr,
 				{0,0,
 				-shieldWaterHousingBox->GetZHalfLength()+waterhousing_thickness+shieldWaterTankBox->GetZHalfLength()},
-				shieldWaterTankLV, "HatWaterTank_PV", shieldWaterHousingLV, false, 0, OverlapCheck);
-		shieldPMTroomPV = new G4PVPlacement( nullptr,	{0,0,
+				shieldWaterTankLV, "HatWaterTank_PV", shieldWaterTankAirLV, false, 0, OverlapCheck);
+				/*
+		new G4PVPlacement( nullptr,	{0,0,
 				shieldWaterHousingBox->GetZHalfLength()-waterhousing_thickness - shieldPMTroomBox->GetZHalfLength()},
 				shieldPMTroomLV, "HatPMTroom_PV", shieldWaterHousingLV, false, 0, OverlapCheck);
-
-		// Hat H-beam ----------------------------
-		HatBeamHousingPV = new G4PVPlacement( nullptr, 
-				{0,0, shieldHatAirBox->GetZHalfLength() + nShield_hatGapFromLead},
-				HatBeamHousingLV, "HatBeamHousing_PV", logiCavern, false, 0, 0);
-
-		
-		double beamdist_y = (HatInnerY*2-HatHBeam_size)/5.;
-		double beamdist_x = (HatInnerX*2-HatHBeam_size)/5.;
-		for(int ih = 0; ih < 6; ih++){
-			new G4PVPlacement( nullptr, {-HatInnerX+HatHBeam_size/2., -HatInnerY+HatHBeam_size/2.+ ih*beamdist_y, 
-					HatInnerZ/2.-HatHBeam_size - HatHBeam_heightS/2.},
-					HatBeamShortLV, "HatBeamShort_PV", HatBeamHousingLV, false, 0, OverlapCheck);
-			new G4PVPlacement( nullptr, {HatInnerX-HatHBeam_size/2., -HatInnerY+HatHBeam_size/2.+ ih*beamdist_y, 
-					HatInnerZ/2.-HatHBeam_size - HatHBeam_heightS/2.},
-					HatBeamShortLV, "HatBeamShort_PV", HatBeamHousingLV, false, 0, OverlapCheck);
-			if( 0 <ih && ih< 5){
-				new G4PVPlacement( nullptr, {-HatInnerX+HatHBeam_size/2.+ih*beamdist_x, -HatInnerY+HatHBeam_size/2., 
-						HatInnerZ/2.-HatHBeam_size - HatHBeam_heightS/2.},
-						HatBeamShortLV, "HatBeamShort_PV", HatBeamHousingLV, false, 0, OverlapCheck);
-				new G4PVPlacement( nullptr, {-HatInnerX+HatHBeam_size/2.+ih*beamdist_x, HatInnerY-HatHBeam_size/2., 
-						HatInnerZ/2.-HatHBeam_size - HatHBeam_heightS/2.},
-						HatBeamShortLV, "HatBeamShort_PV", HatBeamHousingLV, false, 0, OverlapCheck);
-			}
-		}
-
-		G4RotationMatrix *hatbeamRotMtx = new G4RotationMatrix();
-		hatbeamRotMtx->rotateY(90*deg);
-		new G4PVPlacement(G4Transform3D(*hatbeamRotMtx,G4ThreeVector(
-						0,-HatInnerY+HatHBeam_size/2.,HatInnerZ/2.-HatHBeam_size/2.)),
-				HatBeamLong1LV, "HatBeamLong1_PV", HatBeamHousingLV, false, 0, OverlapCheck);
-		new G4PVPlacement(G4Transform3D(*hatbeamRotMtx,G4ThreeVector(
-						0,HatInnerY-HatHBeam_size/2.,HatInnerZ/2.-HatHBeam_size/2.)),
-				HatBeamLong1LV, "HatBeamLong1_PV", HatBeamHousingLV, false, 0, OverlapCheck);
-		hatbeamRotMtx->rotateZ(90*deg);
-		new G4PVPlacement(G4Transform3D(*hatbeamRotMtx,G4ThreeVector(
-						-HatInnerX+HatHBeam_size/2.,0,HatInnerZ/2.-HatHBeam_size/2.)),
-				HatBeamLong2LV, "HatBeamLong2_PV", HatBeamHousingLV, false, 0, OverlapCheck);
-		new G4PVPlacement(G4Transform3D(*hatbeamRotMtx,G4ThreeVector(
-						HatInnerX-HatHBeam_size/2.,0,HatInnerZ/2.-HatHBeam_size/2.)),
-				HatBeamLong2LV, "HatBeamLong2_PV", HatBeamHousingLV, false, 0, OverlapCheck);
+				*/
 
 		// Hat Aluminium plate -------------------
 		HatAlPlatePV = new G4PVPlacement( nullptr,
@@ -1072,232 +648,287 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 				{0,0, HatAlPlateInBox->GetZHalfLength() + nShield_hatGapFromLead},
 				shieldHatBoricLV, "HatBoricAcid_PV", logiCavern, false, 0, 0);
 
-		// Detector supporting H-beam
-		DetHbeamHousingPV = new G4PVPlacement( nullptr, 
-				{0, 0, shieldHatSpaceBox->GetZHalfLength() + nShield_hatGapFromLead + DetHbeam_size/2.},
-				DetHbeamHousingLV, "DetHbeamHousing_PV", logiCavern, false, 0, 0);
+		if(fEnable_Gantry){
+			// Hat H-beam ----------------------------
+			HatBeamHousingPV = new G4PVPlacement( nullptr, 
+					{0,0, shieldHatAirBox->GetZHalfLength() + nShield_hatGapFromLead},
+					HatBeamHousingLV, "HatBeamHousing_PV", logiCavern, false, 0, 0);
 
-		G4RotationMatrix *detbeamRotMtx = new G4RotationMatrix();
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				- DetHbeam_height/2.-DetHbeam_size/2., - DetHbeam_height/2.+DetHbeam_size/2., 
-				-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol)),
-				DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				- DetHbeam_height/2.-DetHbeam_size/2., DetHbeam_height/2.-DetHbeam_size/2., 
-				- DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol)),
-				DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				DetHbeam_height/2.+DetHbeam_size/2., - DetHbeam_height/2.+DetHbeam_size/2., 
-				- DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol)),
-				DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				DetHbeam_height/2.+DetHbeam_size/2., DetHbeam_height/2.-DetHbeam_size/2., 
-				- DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol)),
-				DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
 
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				- DetHbeamS_height/4.-DetHbeam_size/2., - DetHbeamS_height/4.+DetHbeam_size/2., 
-				-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
-				+DetHbeam_height/2.-DetHbeamS_height/2.)),
-				DetHbeamSLV, "HatBeamShort_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				- DetHbeamS_height/4.-DetHbeam_size/2., DetHbeamS_height/4.-DetHbeam_size/2.,
-				-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
-				+DetHbeam_height/2.-DetHbeamS_height/2.)),
-				DetHbeamSLV, "HatBeamShort_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				DetHbeamS_height/4.+DetHbeam_size/2.,	- DetHbeamS_height/4.+DetHbeam_size/2., 
-				-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
-				+DetHbeam_height/2.-DetHbeamS_height/2.)),
-				DetHbeamSLV, "HatBeamShort_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				DetHbeamS_height/4.+DetHbeam_size/2., DetHbeamS_height/4.-DetHbeam_size/2., 
-				-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
-				+DetHbeam_height/2.-DetHbeamS_height/2.)),
-				DetHbeamSLV, "HatBeamShort_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			double beamdist_y = (HatInnerY*2-HatHBeam_size)/5.;
+			double beamdist_x = (HatInnerX*2-HatHBeam_size)/5.;
+			for(int ih = 0; ih < 6; ih++){
+				new G4PVPlacement( nullptr, {-HatInnerX+HatHBeam_size/2., -HatInnerY+HatHBeam_size/2.+ ih*beamdist_y, 
+						HatInnerZ/2.-HatHBeam_size - HatHBeam_heightS/2.},
+						HatBeamShortLV, "HatBeamShort_PV", HatBeamHousingLV, false, 0, OverlapCheck);
+				new G4PVPlacement( nullptr, {HatInnerX-HatHBeam_size/2., -HatInnerY+HatHBeam_size/2.+ ih*beamdist_y, 
+						HatInnerZ/2.-HatHBeam_size - HatHBeam_heightS/2.},
+						HatBeamShortLV, "HatBeamShort_PV", HatBeamHousingLV, false, 0, OverlapCheck);
+				if( 0 <ih && ih< 5){
+					new G4PVPlacement( nullptr, {-HatInnerX+HatHBeam_size/2.+ih*beamdist_x, -HatInnerY+HatHBeam_size/2., 
+							HatInnerZ/2.-HatHBeam_size - HatHBeam_heightS/2.},
+							HatBeamShortLV, "HatBeamShort_PV", HatBeamHousingLV, false, 0, OverlapCheck);
+					new G4PVPlacement( nullptr, {-HatInnerX+HatHBeam_size/2.+ih*beamdist_x, HatInnerY-HatHBeam_size/2., 
+							HatInnerZ/2.-HatHBeam_size - HatHBeam_heightS/2.},
+							HatBeamShortLV, "HatBeamShort_PV", HatBeamHousingLV, false, 0, OverlapCheck);
+				}
+			}
 
-		DetHbeamVPV[0] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				-DetHbeam_height/2.-DetHbeam_size/2., 
-				-DetHbeamHousingBox->GetYHalfLength()+DetHbeam_size/2.,
-				-DetHbeamVBox->GetZHalfLength())),
-				DetHbeamVLV, "HatBeamV_PV", logiCavern, false, 0, 0);
-		DetHbeamVPV[1] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				-DetHbeam_height/2.+DetHbeam_size/2., 
-				DetHbeamHousingBox->GetYHalfLength()-DetHbeam_size/2., 
-				-DetHbeamVBox->GetZHalfLength())),
-				DetHbeamVLV, "HatBeamV_PV", logiCavern, false, 0, 0);
-		DetHbeamVPV[2] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				+DetHbeam_height/2.+DetHbeam_size/2., 
-				-DetHbeamHousingBox->GetYHalfLength()+DetHbeam_size/2.,
-				-DetHbeamVBox->GetZHalfLength())),
-				DetHbeamVLV, "HatBeamV_PV", logiCavern, false, 0, 0);
-		DetHbeamVPV[3] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				+DetHbeam_height/2.-DetHbeam_size/2., 
-				DetHbeamHousingBox->GetYHalfLength()-DetHbeam_size/2., 
-				-DetHbeamVBox->GetZHalfLength())),
-				DetHbeamVLV, "HatBeamV_PV", logiCavern, false, 0, 0);
-		DetHbeamVPV[4] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				-DetHbeam_height/2.-DetHbeam_size/2., 
-				-DetHbeamHousingBox->GetYHalfLength()+DetHbeam_size/2.-DetHbeamS_height,
-				-DetHbeamVBox->GetZHalfLength())),
-				DetHbeamVLV, "HatBeamV_PV", logiCavern, false, 0, 0);
-		DetHbeamVPV[5] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				-DetHbeam_height/2.+DetHbeam_size/2., 
-				DetHbeamHousingBox->GetYHalfLength()-DetHbeam_size/2.+DetHbeamS_height, 
-				-DetHbeamVBox->GetZHalfLength())),
-				DetHbeamVLV, "HatBeamV_PV", logiCavern, false, 0, 0);
-		DetHbeamVPV[6] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				+DetHbeam_height/2.+DetHbeam_size/2., 
-				-DetHbeamHousingBox->GetYHalfLength()+DetHbeam_size/2.-DetHbeamS_height,
-				-DetHbeamVBox->GetZHalfLength())),
-				DetHbeamVLV, "HatBeamV_PV", logiCavern, false, 0, 0);
-		DetHbeamVPV[7] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				+DetHbeam_height/2.-DetHbeam_size/2., 
-				DetHbeamHousingBox->GetYHalfLength()-DetHbeam_size/2.+DetHbeamS_height, 
-				-DetHbeamVBox->GetZHalfLength())),
-				DetHbeamVLV, "HatBeamV_PV", logiCavern, false, 0, 0);
+			G4RotationMatrix *hatbeamRotMtx = new G4RotationMatrix();
+			hatbeamRotMtx->rotateY(90*deg);
+			new G4PVPlacement(G4Transform3D(*hatbeamRotMtx,G4ThreeVector(
+							0,-HatInnerY+HatHBeam_size/2.,HatInnerZ/2.-HatHBeam_size/2.)),
+					HatBeamLong1LV, "HatBeamLong1_PV", HatBeamHousingLV, false, 0, OverlapCheck);
+			new G4PVPlacement(G4Transform3D(*hatbeamRotMtx,G4ThreeVector(
+							0,HatInnerY-HatHBeam_size/2.,HatInnerZ/2.-HatHBeam_size/2.)),
+					HatBeamLong1LV, "HatBeamLong1_PV", HatBeamHousingLV, false, 0, OverlapCheck);
+			hatbeamRotMtx->rotateZ(90*deg);
+			new G4PVPlacement(G4Transform3D(*hatbeamRotMtx,G4ThreeVector(
+							-HatInnerX+HatHBeam_size/2.,0,HatInnerZ/2.-HatHBeam_size/2.)),
+					HatBeamLong2LV, "HatBeamLong2_PV", HatBeamHousingLV, false, 0, OverlapCheck);
+			new G4PVPlacement(G4Transform3D(*hatbeamRotMtx,G4ThreeVector(
+							HatInnerX-HatHBeam_size/2.,0,HatInnerZ/2.-HatHBeam_size/2.)),
+					HatBeamLong2LV, "HatBeamLong2_PV", HatBeamHousingLV, false, 0, OverlapCheck);
 
-		detbeamRotMtx->rotateX(90*deg);
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				-DetHbeam_height/2.-DetHbeam_size/2., 0, 
-				-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
-				+DetHbeam_height/2.+ DetHbeam_size/2.)),
-				DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				DetHbeam_height/2.+DetHbeam_size/2., 0, 
-				-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
-				+DetHbeam_height/2.+ DetHbeam_size/2.)),
-				DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			// Detector supporting H-beam
+			DetHbeamHousingPV = new G4PVPlacement( nullptr, 
+					{0, 0, shieldHatSpaceBox->GetZHalfLength() + nShield_hatGapFromLead + DetHbeam_size/2.},
+					DetHbeamHousingLV, "DetHbeamHousing_PV", logiCavern, false, 0, 0);
 
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				-DetHbeamS_height/4.-DetHbeam_size/2., 0, 
-				-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
-				+DetHbeam_height/2.-DetHbeamS_height-DetHbeam_size/2.)),
-				DetHbeamMLV, "HatBeamShort_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				DetHbeamS_height/4.+DetHbeam_size/2., 0, 
-				-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
-				+DetHbeam_height/2.-DetHbeamS_height-DetHbeam_size/2.)),
-				DetHbeamMLV, "HatBeamShort_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			G4RotationMatrix *detbeamRotMtx = new G4RotationMatrix();
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							- DetHbeam_height/2.-DetHbeam_size/2., - DetHbeam_height/2.+DetHbeam_size/2., 
+							-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol)),
+					DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							- DetHbeam_height/2.-DetHbeam_size/2., DetHbeam_height/2.-DetHbeam_size/2., 
+							- DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol)),
+					DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							DetHbeam_height/2.+DetHbeam_size/2., - DetHbeam_height/2.+DetHbeam_size/2., 
+							- DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol)),
+					DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							DetHbeam_height/2.+DetHbeam_size/2., DetHbeam_height/2.-DetHbeam_size/2., 
+							- DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol)),
+					DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
 
-		DetHbeamHPV[0] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				-DetHbeam_height/2.-DetHbeam_size/2., 0, +nShield_hatGapFromLead + DetHbeam_size/2.)),
-				DetHbeamHLV, "HatBeamH_PV", logiCavern, false, 0, 0);
-		DetHbeamHPV[1] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				-DetHbeam_height/2.+DetHbeam_size/2., 0, +nShield_hatGapFromLead + DetHbeam_size/2.)),
-				DetHbeamHLV, "HatBeamH_PV", logiCavern, false, 0, 0);
-		DetHbeamHPV[2] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				+DetHbeam_height/2.+DetHbeam_size/2., 0, +nShield_hatGapFromLead + DetHbeam_size/2.)),
-				DetHbeamHLV, "HatBeamH_PV", logiCavern, false, 0, 0);
-		DetHbeamHPV[3] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				+DetHbeam_height/2.-DetHbeam_size/2., 0, +nShield_hatGapFromLead + DetHbeam_size/2.)),
-				DetHbeamHLV, "HatBeamH_PV", logiCavern, false, 0, 0);
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							- DetHbeamS_height/4.-DetHbeam_size/2., - DetHbeamS_height/4.+DetHbeam_size/2., 
+							-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
+							+DetHbeam_height/2.-DetHbeamS_height/2.)),
+					DetHbeamSLV, "HatBeamShort_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							- DetHbeamS_height/4.-DetHbeam_size/2., DetHbeamS_height/4.-DetHbeam_size/2.,
+							-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
+							+DetHbeam_height/2.-DetHbeamS_height/2.)),
+					DetHbeamSLV, "HatBeamShort_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							DetHbeamS_height/4.+DetHbeam_size/2.,	- DetHbeamS_height/4.+DetHbeam_size/2., 
+							-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
+							+DetHbeam_height/2.-DetHbeamS_height/2.)),
+					DetHbeamSLV, "HatBeamShort_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							DetHbeamS_height/4.+DetHbeam_size/2., DetHbeamS_height/4.-DetHbeam_size/2., 
+							-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
+							+DetHbeam_height/2.-DetHbeamS_height/2.)),
+					DetHbeamSLV, "HatBeamShort_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
 
-		detbeamRotMtx->rotateZ(90*deg);
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				0, -DetHbeam_height/2.+DetHbeam_size/2., 
-				-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
-				+DetHbeam_height/2.+ DetHbeam_size/2.)),
-				DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				0, DetHbeam_height/2.-DetHbeam_size/2., 
-				-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
-				+DetHbeam_height/2.+ DetHbeam_size/2.)),
-				DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				0, DetHbeamS_height/4.-DetHbeam_size/2., 
-				-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
-				+DetHbeam_height/2.+ DetHbeam_size/2.)),
-				DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				0, -DetHbeamS_height/4.+DetHbeam_size/2., 
-				-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
-				+DetHbeam_height/2.+ DetHbeam_size/2.)),
-				DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			DetHbeamVPV[0] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							-DetHbeam_height/2.-DetHbeam_size/2., 
+							-DetHbeamHousingBox->GetYHalfLength()+DetHbeam_size/2.,
+							-DetHbeamVBox->GetZHalfLength())),
+					DetHbeamVLV, "HatBeamV_PV", logiCavern, false, 0, 0);
+			DetHbeamVPV[1] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							-DetHbeam_height/2.+DetHbeam_size/2., 
+							DetHbeamHousingBox->GetYHalfLength()-DetHbeam_size/2., 
+							-DetHbeamVBox->GetZHalfLength())),
+					DetHbeamVLV, "HatBeamV_PV", logiCavern, false, 0, 0);
+			DetHbeamVPV[2] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							+DetHbeam_height/2.+DetHbeam_size/2., 
+							-DetHbeamHousingBox->GetYHalfLength()+DetHbeam_size/2.,
+							-DetHbeamVBox->GetZHalfLength())),
+					DetHbeamVLV, "HatBeamV_PV", logiCavern, false, 0, 0);
+			DetHbeamVPV[3] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							+DetHbeam_height/2.-DetHbeam_size/2., 
+							DetHbeamHousingBox->GetYHalfLength()-DetHbeam_size/2., 
+							-DetHbeamVBox->GetZHalfLength())),
+					DetHbeamVLV, "HatBeamV_PV", logiCavern, false, 0, 0);
+			DetHbeamVPV[4] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							-DetHbeam_height/2.-DetHbeam_size/2., 
+							-DetHbeamHousingBox->GetYHalfLength()+DetHbeam_size/2.-DetHbeamS_height,
+							-DetHbeamVBox->GetZHalfLength())),
+					DetHbeamVLV, "HatBeamV_PV", logiCavern, false, 0, 0);
+			DetHbeamVPV[5] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							-DetHbeam_height/2.+DetHbeam_size/2., 
+							DetHbeamHousingBox->GetYHalfLength()-DetHbeam_size/2.+DetHbeamS_height, 
+							-DetHbeamVBox->GetZHalfLength())),
+					DetHbeamVLV, "HatBeamV_PV", logiCavern, false, 0, 0);
+			DetHbeamVPV[6] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							+DetHbeam_height/2.+DetHbeam_size/2., 
+							-DetHbeamHousingBox->GetYHalfLength()+DetHbeam_size/2.-DetHbeamS_height,
+							-DetHbeamVBox->GetZHalfLength())),
+					DetHbeamVLV, "HatBeamV_PV", logiCavern, false, 0, 0);
+			DetHbeamVPV[7] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							+DetHbeam_height/2.-DetHbeam_size/2., 
+							DetHbeamHousingBox->GetYHalfLength()-DetHbeam_size/2.+DetHbeamS_height, 
+							-DetHbeamVBox->GetZHalfLength())),
+					DetHbeamVLV, "HatBeamV_PV", logiCavern, false, 0, 0);
 
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				0, -DetHbeamS_height/4.+DetHbeam_size/2., 
-				-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
-				+DetHbeam_height/2.-DetHbeamS_height-DetHbeam_size/2.)),
-				DetHbeamMLV, "HatBeamShort_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
-		new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
-				0, DetHbeamS_height/4.-DetHbeam_size/2., 
-				-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
-				+DetHbeam_height/2.-DetHbeamS_height-DetHbeam_size/2.)),
-				DetHbeamMLV, "HatBeamShort_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			detbeamRotMtx->rotateX(90*deg);
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							-DetHbeam_height/2.-DetHbeam_size/2., 0, 
+							-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
+							+DetHbeam_height/2.+ DetHbeam_size/2.)),
+					DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							DetHbeam_height/2.+DetHbeam_size/2., 0, 
+							-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
+							+DetHbeam_height/2.+ DetHbeam_size/2.)),
+					DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
 
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							-DetHbeamS_height/4.-DetHbeam_size/2., 0, 
+							-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
+							+DetHbeam_height/2.-DetHbeamS_height-DetHbeam_size/2.)),
+					DetHbeamMLV, "HatBeamShort_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							DetHbeamS_height/4.+DetHbeam_size/2., 0, 
+							-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
+							+DetHbeam_height/2.-DetHbeamS_height-DetHbeam_size/2.)),
+					DetHbeamMLV, "HatBeamShort_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+
+			DetHbeamHPV[0] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							-DetHbeam_height/2.-DetHbeam_size/2., 0, +nShield_hatGapFromLead + DetHbeam_size/2.)),
+					DetHbeamHLV, "HatBeamH_PV", logiCavern, false, 0, 0);
+			DetHbeamHPV[1] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							-DetHbeam_height/2.+DetHbeam_size/2., 0, +nShield_hatGapFromLead + DetHbeam_size/2.)),
+					DetHbeamHLV, "HatBeamH_PV", logiCavern, false, 0, 0);
+			DetHbeamHPV[2] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							+DetHbeam_height/2.+DetHbeam_size/2., 0, +nShield_hatGapFromLead + DetHbeam_size/2.)),
+					DetHbeamHLV, "HatBeamH_PV", logiCavern, false, 0, 0);
+			DetHbeamHPV[3] = new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							+DetHbeam_height/2.-DetHbeam_size/2., 0, +nShield_hatGapFromLead + DetHbeam_size/2.)),
+					DetHbeamHLV, "HatBeamH_PV", logiCavern, false, 0, 0);
+
+			detbeamRotMtx->rotateZ(90*deg);
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							0, -DetHbeam_height/2.+DetHbeam_size/2., 
+							-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
+							+DetHbeam_height/2.+ DetHbeam_size/2.)),
+					DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							0, DetHbeam_height/2.-DetHbeam_size/2., 
+							-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
+							+DetHbeam_height/2.+ DetHbeam_size/2.)),
+					DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							0, DetHbeamS_height/4.-DetHbeam_size/2., 
+							-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
+							+DetHbeam_height/2.+ DetHbeam_size/2.)),
+					DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							0, -DetHbeamS_height/4.+DetHbeam_size/2., 
+							-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
+							+DetHbeam_height/2.+ DetHbeam_size/2.)),
+					DetHbeamLV, "HatBeamLong_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							0, -DetHbeamS_height/4.+DetHbeam_size/2., 
+							-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
+							+DetHbeam_height/2.-DetHbeamS_height-DetHbeam_size/2.)),
+					DetHbeamMLV, "HatBeamShort_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+			new G4PVPlacement(G4Transform3D(*detbeamRotMtx,G4ThreeVector(
+							0, DetHbeamS_height/4.-DetHbeam_size/2., 
+							-DetHbeamHousingBox->GetZHalfLength()+DetHbeam_height/2.+solidBooleanTol
+							+DetHbeam_height/2.-DetHbeamS_height-DetHbeam_size/2.)),
+					DetHbeamMLV, "HatBeamShort_PV", DetHbeamHousingLV, false, 0, OverlapCheck);
+		}
 	}
-
 
 	//////////////////////////////////////////
 	// reposition the chambers to fit the cavern type
 	//////////////////////////////////////////
 	if(!fNeutronMode && !fRockgammaMode){
+		G4double HatBottomPosZ = plasticVetoHousing1Box->GetZHalfLength()*2 + nShield_hatGapFromLead + nShield_GapFromCeiling;
+
 		G4ThreeVector topTlate = G4ThreeVector(0,0,
-				shieldWaterHousingBox->GetZHalfLength() + shieldPEBox->GetZHalfLength()*2 + nShield_hatGapFromLead);
+				HatBottomPosZ + shieldWaterHousingBox->GetZHalfLength());
 		G4ThreeVector topBeamTlate = G4ThreeVector(0,0,
-				shieldHatAirBox->GetZHalfLength() + shieldPEBox->GetZHalfLength()*2 + nShield_hatGapFromLead);
+				HatBottomPosZ + shieldHatAirBox->GetZHalfLength());
 		G4ThreeVector topAlPlateTlate = G4ThreeVector(0,0,
-				HatBeamHousingInBox->GetZHalfLength() + shieldPEBox->GetZHalfLength()*2 + nShield_hatGapFromLead);
+				HatBottomPosZ + HatBeamHousingInBox->GetZHalfLength());
 		G4ThreeVector topBoricTlate = G4ThreeVector(0, 0, 
-				HatAlPlateInBox->GetZHalfLength() + shieldPEBox->GetZHalfLength()*2 + nShield_hatGapFromLead);
+				HatBottomPosZ + HatAlPlateInBox->GetZHalfLength());
 		G4ThreeVector detHbeamTlate = G4ThreeVector(0, 0, 
-				shieldHatSpaceBox->GetZHalfLength() + shieldPEBox->GetZHalfLength()*2 + nShield_hatGapFromLead + DetHbeam_size);
-		G4ThreeVector detHbeamHPos[4] = {DetHbeamHPV[0]->GetTranslation(), DetHbeamHPV[1]->GetTranslation(),
-			DetHbeamHPV[2]->GetTranslation(), DetHbeamHPV[3]->GetTranslation()};
-		G4ThreeVector detHbeamVPos[8] = {DetHbeamVPV[0]->GetTranslation(), DetHbeamVPV[1]->GetTranslation(),
-			DetHbeamVPV[2]->GetTranslation(), DetHbeamVPV[3]->GetTranslation(),
-			DetHbeamVPV[4]->GetTranslation(), DetHbeamVPV[5]->GetTranslation(),
-			DetHbeamVPV[6]->GetTranslation(), DetHbeamVPV[7]->GetTranslation()};
+				HatBottomPosZ + shieldHatSpaceBox->GetZHalfLength() + DetHbeam_size/2.);
 
 		G4ThreeVector barrelTlate = G4ThreeVector(0,0, plasticVetoHousing1Box->GetZHalfLength());
 		G4ThreeVector bottomTlate = G4ThreeVector(0, 0, rock_floor_thickness - HBeam_size - plasticVetoHousing2Box->GetZHalfLength());
 
+		G4ThreeVector cavernTlate = G4ThreeVector(0);
+
 		if(whichCavernType == kCavern_RealModel){
+			HatBottomPosZ = -cavernLoafBox->GetZHalfLength() + plasticVetoHousing1Box->GetZHalfLength()*2
+				+ nShield_hatGapFromLead + nShield_GapFromCeiling;
+
+			topTlate = G4ThreeVector(room_dist_x, -room_dist_y,
+					HatBottomPosZ+ shieldWaterHousingBox->GetZHalfLength());
+			topBeamTlate = G4ThreeVector(room_dist_x, -room_dist_y,
+					HatBottomPosZ + shieldHatAirBox->GetZHalfLength());
+			topAlPlateTlate = G4ThreeVector(room_dist_x, -room_dist_y,
+					HatBottomPosZ + HatBeamHousingInBox->GetZHalfLength());
+			topBoricTlate = G4ThreeVector(room_dist_x, -room_dist_y, 
+					HatBottomPosZ + HatAlPlateInBox->GetZHalfLength());
+			detHbeamTlate = G4ThreeVector(room_dist_x, -room_dist_y,
+					HatBottomPosZ + shieldHatSpaceBox->GetZHalfLength() + DetHbeam_size/2.);
+
 			barrelTlate = G4ThreeVector(room_dist_x, -room_dist_y, 
 					-cavernLoafBox->GetZHalfLength()+plasticVetoHousing1Box->GetZHalfLength());
-			topTlate = G4ThreeVector(room_dist_x, -room_dist_y,
-					-cavernLoafBox->GetZHalfLength() + plasticVetoHousing1Box->GetZHalfLength()*2
-					+ shieldWaterHousingBox->GetZHalfLength() + nShield_hatGapFromLead);
-			topBeamTlate = G4ThreeVector(room_dist_x, -room_dist_y,
-					-cavernLoafBox->GetZHalfLength() + plasticVetoHousing1Box->GetZHalfLength()*2
-					+ shieldHatAirBox->GetZHalfLength() + nShield_hatGapFromLead);
-			topAlPlateTlate = G4ThreeVector(room_dist_x, -room_dist_y,
-					-cavernLoafBox->GetZHalfLength() + plasticVetoHousing1Box->GetZHalfLength()*2
-					+ HatBeamHousingInBox->GetZHalfLength() + nShield_hatGapFromLead);
-			topBoricTlate = G4ThreeVector(room_dist_x, -room_dist_y, 
-					-cavernLoafBox->GetZHalfLength() + plasticVetoHousing1Box->GetZHalfLength()*2
-					+ HatAlPlateInBox->GetZHalfLength() + nShield_hatGapFromLead);
-			detHbeamTlate = G4ThreeVector(room_dist_x, -room_dist_y,
-					-cavernLoafBox->GetZHalfLength() + plasticVetoHousing1Box->GetZHalfLength()*2
-					+ shieldHatSpaceBox->GetZHalfLength() + nShield_hatGapFromLead + DetHbeam_size/2.);
-			bottomTlate = G4ThreeVector(room_dist_x, -room_dist_y,
+			//bottomTlate = G4ThreeVector(room_dist_x, -room_dist_y,
+			bottomTlate = G4ThreeVector(0,0,
 					rock_floor_thickness - HBeam_size - plasticVetoHousing2Box->GetZHalfLength());
+
+			//cavernTlate = G4ThreeVector(-room_dist_x, room_dist_y,rock_floor_thickness*2);
+			cavernTlate = G4ThreeVector(-room_dist_x, room_dist_y, cavernLoafBox->GetZHalfLength());
 		}
 		vetoHousing1PV->SetTranslation(barrelTlate);
 		vetoHousing2PV->SetTranslation(bottomTlate);
 		shieldWaterHousingPV->SetTranslation(topTlate);
-		HatBeamHousingPV->SetTranslation(topBeamTlate);
 		HatAlPlatePV->SetTranslation(topAlPlateTlate);
 		shieldHatBoricPV->SetTranslation(topBoricTlate);
-		DetHbeamHousingPV->SetTranslation(detHbeamTlate);
-		for(int iH = 0; iH < 8; iH++){
-			if(iH < 4) {
-				DetHbeamHPV[iH]->SetTranslation(detHbeamHPos[iH]+detHbeamTlate+G4ThreeVector(
-					0,0,-DetHbeamHousingBox->GetZHalfLength()-nShield_hatGapFromLead - DetHbeam_size ));
-				DetHbeamHPV[iH]->CheckOverlaps();
+		physCavern->SetTranslation(cavernTlate);
+
+		if(fEnable_Gantry){
+			G4ThreeVector detHbeamHPos[4] = {DetHbeamHPV[0]->GetTranslation(), DetHbeamHPV[1]->GetTranslation(),
+				DetHbeamHPV[2]->GetTranslation(), DetHbeamHPV[3]->GetTranslation()};
+			G4ThreeVector detHbeamVPos[8] = {DetHbeamVPV[0]->GetTranslation(), DetHbeamVPV[1]->GetTranslation(),
+				DetHbeamVPV[2]->GetTranslation(), DetHbeamVPV[3]->GetTranslation(),
+				DetHbeamVPV[4]->GetTranslation(), DetHbeamVPV[5]->GetTranslation(),
+				DetHbeamVPV[6]->GetTranslation(), DetHbeamVPV[7]->GetTranslation()};
+			HatBeamHousingPV->SetTranslation(topBeamTlate);
+			DetHbeamHousingPV->SetTranslation(detHbeamTlate);
+			for(int iH = 0; iH < 8; iH++){
+				if(iH < 4) {
+					DetHbeamHPV[iH]->SetTranslation(detHbeamHPos[iH]+detHbeamTlate+G4ThreeVector(
+								0,0,-DetHbeamHousingBox->GetZHalfLength()-nShield_hatGapFromLead - DetHbeam_size ));
+				}
+				DetHbeamVPV[iH]->SetTranslation(detHbeamVPos[iH]+detHbeamTlate+G4ThreeVector(
+							0, 0, -DetHbeamHousingBox->GetZHalfLength()-DetHbeam_size-HBeam_size));
+				if(OverlapCheck) DetHbeamVPV[iH]->CheckOverlaps();
 			}
-			DetHbeamVPV[iH]->SetTranslation(detHbeamVPos[iH]+detHbeamTlate+G4ThreeVector(
-				0, 0, -DetHbeamHousingBox->GetZHalfLength()-DetHbeam_size-HBeam_size));
-			DetHbeamVPV[iH]->CheckOverlaps();
+			if(OverlapCheck){
+				HatBeamHousingPV->CheckOverlaps();
+				DetHbeamHousingPV->CheckOverlaps();
+			}
 		}
-		vetoHousing1PV->CheckOverlaps();
-		vetoHousing2PV->CheckOverlaps();
-		shieldWaterHousingPV->CheckOverlaps();
-		HatBeamHousingPV->CheckOverlaps();
-		HatAlPlatePV->CheckOverlaps();
-		shieldHatBoricPV->CheckOverlaps();
-		DetHbeamHousingPV->CheckOverlaps();
+		if(OverlapCheck){
+			vetoHousing1PV->CheckOverlaps();
+			vetoHousing2PV->CheckOverlaps();
+			shieldWaterHousingPV->CheckOverlaps();
+			HatAlPlatePV->CheckOverlaps();
+			shieldHatBoricPV->CheckOverlaps();
+		}
 	}
 
 	//////////////////////////////////////////
@@ -1307,26 +938,32 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 	G4double len[4] = {1192,2208,2218,882};
 	// WC supporting H-beam housing----------
 	G4Box *HbeamHousingOut = new G4Box("hbeamhousingOut_Box", 
-			HBeam_housingX/2., HBeam_housingY/2., (PS_housing_height+HBeam_size)/2.);
+			HBeam_housingX/2., HBeam_housingY/2., (PS_housing_height+HBeam_size+nShield_GapFromCeiling)/2.);
 	G4Box *HbeamHousingIn = new G4Box("hbeamhousingIn_Box",
 			HBeam_housingX/2. - HBeam_size,
 			HBeam_housingY/2. - HBeam_size,
-			PS_housing_height + HBeam_size);
+			(PS_housing_height+nShield_GapFromCeiling)/2.);
 	//G4Box *HbeamHousingCut = new G4Box("hbeamHousingCut", top_plate_x/2., top_plate_y/2., PS_housing_height);
 	G4Box *HbeamHousingCut = new G4Box("hbeamHousingCut", sst_xsize_half, sst_ysize_half, PS_housing_height);
 	G4VSolid *HbeamHousing = new G4SubtractionSolid("hbeamhousing_Solid", HbeamHousingOut, HbeamHousingIn, 0, 
-			G4ThreeVector(0,0, - (PS_housing_height + HBeam_size)/2. - HBeam_size));
+			//G4ThreeVector(0,0, - HbeamHousingOut->GetZHalfLength() - HBeam_size));
+					 G4ThreeVector(0,0, - HbeamHousingOut->GetZHalfLength() +HbeamHousingIn->GetZHalfLength()));
 	HbeamHousing = new G4SubtractionSolid("hbeamhousing_Solid", HbeamHousing, HbeamHousingCut, 0, 
 			G4ThreeVector( HBeam_housingDist, 0, 0));
-	HbeamHousingLV = new G4LogicalVolume(HbeamHousing, _air, "HbeamHousing_LV");
+	G4LogicalVolume *HbeamHousingLV = new G4LogicalVolume(HbeamHousing, _air, "HbeamHousing_LV");
 	HbeamHousingLV->SetVisAttributes(G4VisAttributes::Invisible);
 
-	if(whichVetoGeometry==kVeto_Beam){
+	G4LogicalVolume *HbeamBotLV = nullptr;
+	G4LogicalVolume *PitLV = nullptr;
+
+	if(fEnable_Gantry){
 		// H-beam Bottom ----------
 		HbeamBotLV    = MakeHBeam1(_iron1);
+		HbeamBotLV->SetVisAttributes(ironVis);
 
 		// Pit ----------
 		PitLV    = MakePit(pitBox_x, pitBox_z,_rebar, HBeam_size);
+		PitLV->SetVisAttributes(ironVis);
 
 		// WC supporting H-beam -------------------
 		G4Box *beamCut = new G4Box("beamCut", HBeam_size, HBeam_size/2. - HBeam_thickness, HBeam_housingX);
@@ -1339,6 +976,7 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 		HbeamV = new G4SubtractionSolid("HbeamV", HbeamV, beamCut, 0, 
 				{-HBeam_size - HBeam_thickness, 0, 0});
 		G4LogicalVolume *HbeamV_LV = new G4LogicalVolume(HbeamV, _iron2, "HbeamV_LV");
+		HbeamV_LV->SetVisAttributes(ironVis);
 
 		// H-beam horizontal
 		beamRotMtx->rotateX(90*deg);
@@ -1348,6 +986,7 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 		HbeamH = new G4SubtractionSolid("HbeamH", HbeamH, beamCut, 
 				G4Transform3D(*beamRotMtx, {-HBeam_size + -HBeam_thickness,0, 0}));
 		G4LogicalVolume *HbeamH_LV = new G4LogicalVolume(HbeamH, _iron2, "HbeamH_LV");
+		HbeamH_LV->SetVisAttributes(ironVis);
 
 		// Small H-beams
 		G4Box *HbeamShort[7];
@@ -1361,6 +1000,7 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 			HbeamSH[i] = new G4SubtractionSolid(Form("HbeamSH1%d",i), HbeamSH[i], beamCut, 
 					G4Transform3D(*beamRotMtx, {0, -HBeam_size - HBeam_thickness, 0}));
 			HbeamSH_LV[i] = new G4LogicalVolume(HbeamSH[i], _iron2, Form("HbeamSH%d_LV",i));
+			HbeamSH_LV[i]->SetVisAttributes(ironVis);
 		}
 
 
@@ -1420,35 +1060,24 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 		G4PVPlacement *HbeamHousingPV = nullptr;
 
 		G4ThreeVector HbeamTlate = G4ThreeVector( 0, 0, 
-				-plasticVetoHousing1Box->GetZHalfLength()*2 - HBeam_size/2.);
+				-plasticVetoHousing1Box->GetZHalfLength()*2 - nShield_GapFromCeiling - HBeam_size/2.);
 		G4ThreeVector pitTlate = G4ThreeVector(-pitBox_x/2., 0, 
-				-plasticVetoHousing1Box->GetZHalfLength()*2 - pitBox_z/2.);
+				-plasticVetoHousing1Box->GetZHalfLength()*2 -nShield_GapFromCeiling - pitBox_z/2.);
 		G4ThreeVector HbeamHousingTlate = G4ThreeVector(-HBeam_housingDist,0,
-				-plasticVetoHousing1Box->GetZHalfLength()*2 + HbeamHousingOut->GetZHalfLength());
+				-plasticVetoHousing1Box->GetZHalfLength()*2 - nShield_GapFromCeiling + HbeamHousingOut->GetZHalfLength());
 
-		if(fRockgammaMode){
-			HbeamBotPV = nullptr;
-			pitPV = nullptr;
-			HbeamHousingPV = nullptr;
-		}
-		else if(fNeutronMode){
-			HbeamBotPV = new G4PVPlacement(nullptr, HbeamTlate, HbeamBotLV,"HbeamBot_PV",logiCavern,false,0, 0);
-			pitPV = new G4PVPlacement(nullptr, pitTlate, PitLV,"pit_PV",logiCavern,false,0, 0);
+		if(fNeutronMode){
+			HbeamBotPV = new G4PVPlacement(nullptr, HbeamTlate, HbeamBotLV,"HbeamBot_PV",logiCavern,false,0, OverlapCheck);
+			pitPV = new G4PVPlacement(nullptr, pitTlate, PitLV,"pit_PV",logiCavern,false,0, OverlapCheck);
 			HbeamHousingPV = new G4PVPlacement (nullptr, HbeamHousingTlate, HbeamHousingLV, 
-					"HbeamHousing_PV", logiCavern, false, 0, 0);
-			HbeamBotPV->CheckOverlaps();
-			pitPV->CheckOverlaps();
-			HbeamHousingPV->CheckOverlaps();
+					"HbeamHousing_PV", logiCavern, false, 0, OverlapCheck);
 		}
-		else{
-			HbeamBotPV = new G4PVPlacement(nullptr, HbeamTlate, HbeamBotLV,"HbeamBot_PV",logiFloor,false,0, 0);
-			pitPV = new G4PVPlacement(nullptr, pitTlate, PitLV,"pit_PV",logiFloor,false,0, 0);
-			HbeamHousingPV = new G4PVPlacement (nullptr, HbeamHousingTlate, HbeamHousingLV, 
-					"HbeamHousing_PV", logiCavern, false, 0, 0);
-
+		else if(!fRockgammaMode){
 			if(whichCavernType == kCavern_RealModel){
-				HbeamTlate = G4ThreeVector( room_dist_x, -room_dist_y, rock_floor_thickness-HBeam_size/2.);
-				pitTlate = G4ThreeVector( -pitBox_x/2. + room_dist_x, -room_dist_y, 0);
+				//HbeamTlate = G4ThreeVector( room_dist_x, -room_dist_y, rock_floor_thickness-HBeam_size/2.);
+				//pitTlate = G4ThreeVector( -pitBox_x/2. + room_dist_x, -room_dist_y, 0);
+				HbeamTlate = G4ThreeVector( 0, 0, rock_floor_thickness-HBeam_size/2.);
+				pitTlate = G4ThreeVector( -pitBox_x/2., 0, 0);
 				HbeamHousingTlate = G4ThreeVector( room_dist_x - HBeam_housingDist, -room_dist_y, 
 						-cavernLoafBox->GetZHalfLength() + HbeamHousingOut->GetZHalfLength());
 			}
@@ -1457,25 +1086,60 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 				pitTlate = G4ThreeVector(-pitBox_x/2., 0, rock_floor_thickness - pitBox_z/2.);
 				HbeamHousingTlate = G4ThreeVector( - HBeam_housingDist, 0, HbeamHousingOut->GetZHalfLength());
 			}
-
-			HbeamBotPV->SetTranslation(HbeamTlate);
-			pitPV->SetTranslation(pitTlate);
-			HbeamHousingPV->SetTranslation(HbeamHousingTlate);
-
-			HbeamBotPV->CheckOverlaps();
-			pitPV->CheckOverlaps();
-			HbeamHousingPV->CheckOverlaps();
+			HbeamBotPV = new G4PVPlacement(nullptr, HbeamTlate, HbeamBotLV,"HbeamBot_PV",logiFloor,false,0, OverlapCheck);
+			pitPV = new G4PVPlacement(nullptr, pitTlate, PitLV,"pit_PV",logiFloor,false,0, OverlapCheck);
+			HbeamHousingPV = new G4PVPlacement (nullptr, HbeamHousingTlate, HbeamHousingLV, 
+					"HbeamHousing_PV", logiCavern, false, 0, OverlapCheck);
 		}
 
+		if (fDbgMsgOn) {
+			cout << " ======================== H-beams =========" << endl;
+			cout << "  ( length: mm, weight: kg, global coordinate)" << endl;
+			cout << " Bottom H-beam " << endl;
+			cout << "     mass      : " << HbeamBotLV->GetMass(true,false)/kg;
+			if(fFloorPhysical!=nullptr){
+				cout << "     coordinate: " << HbeamBotPV->GetTranslation() + fFloorPhysical->GetTranslation() << endl;
+			} else cout << "     coordinate: " << HbeamBotPV->GetTranslation() << endl;
+			cout << " Pit " << endl;
+			cout << "     mass      : " << PitLV->GetMass(true,false)/kg;
+			if(fFloorPhysical!=nullptr){
+				cout << "     coordinate: " << pitPV->GetTranslation() + fFloorPhysical->GetTranslation() << endl;
+			} else cout << "     coordinate: " << pitPV->GetTranslation() << endl;
+			cout << " H-beam housing 1" << endl;
+			cout << "     dimension                     : " << HbeamHousingOut->GetXHalfLength()*2 << " x " 
+				<< HbeamHousingOut->GetYHalfLength()*2 << " x " 
+				<< HbeamHousingOut->GetZHalfLength()*2 << endl;
+			cout << "     coordinaate                   : " 
+				<< HbeamHousingPV->GetTranslation() + physCavern->GetTranslation() << endl;
+			cout << "     mass (HbeamV, HbeamH, HbeamSH): " << HbeamV_LV->GetMass(true,false)/kg << ", "
+				<< HbeamH_LV->GetMass(true,false)/kg << ", "
+				<< HbeamSH_LV[0]->GetMass(true,false)/kg << endl;
+			cout << " H-beam housing 2" << endl;
+			cout << "     dimension                 : " << shieldHatAirBox->GetXHalfLength()*2 << " x " 
+				<< shieldHatAirBox->GetYHalfLength()*2 << " x " 
+				<< shieldHatAirBox->GetZHalfLength()*2 << endl;
+			cout << "     coordinaate               : " << HatBeamHousingPV->GetTranslation() + physCavern->GetTranslation() << endl;
+			cout << "     mass (Long1, Long2, Short): " << HatBeamLong1LV->GetMass(true,false)/kg << ", "
+				<< HatBeamLong2LV->GetMass(true,false)/kg << ", " 
+				<< HatBeamShortLV->GetMass(true,false)/kg << endl;
+			cout << " H-beam housing 3" << endl;
+			cout << "     dimension                               : " << DetHbeamHousingBox->GetXHalfLength()*2 << " x " 
+				<< DetHbeamHousingBox->GetYHalfLength()*2 << " x " 
+				<< DetHbeamHousingBox->GetZHalfLength()*2 << endl;
+			cout << "     coordinaate                             : " << 
+				DetHbeamHousingPV->GetTranslation() + physCavern->GetTranslation() << endl;
+			cout << "     mass (Long, Short, Horizontal, Vertical): " << DetHbeamLV->GetMass(true,false)/kg << ", "
+				<< DetHbeamSLV->GetMass(true,false)/kg << ", " 
+				<< DetHbeamHLV->GetMass(true,false)/kg << ", "
+				<< DetHbeamVLV->GetMass(true,false)/kg << endl;
+		}
 	}
-	else{
+	else{ // Without H-beams
 		G4PVPlacement *HbeamHousingPV = nullptr;
-		if(fRockgammaMode){
-			HbeamHousingPV = nullptr;
-		}
+		if(fRockgammaMode){ HbeamHousingPV = nullptr;	}
 		else {
-			G4ThreeVector HbeamHousingTlate = G4ThreeVector(-HBeam_housingDist,0, 
-					-plasticVetoHousing1Box->GetZHalfLength()*2 + HbeamHousingOut->GetZHalfLength());
+			G4ThreeVector HbeamHousingTlate = G4ThreeVector(-HBeam_housingDist,0,
+					-plasticVetoHousing1Box->GetZHalfLength()*2 - nShield_GapFromCeiling + HbeamHousingOut->GetZHalfLength());
 			HbeamHousingPV = new G4PVPlacement (nullptr, HbeamHousingTlate, HbeamHousingLV, 
 					"HbeamHousing_PV", logiCavern, false, 0, 0);
 
@@ -1489,16 +1153,19 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 				}
 			}
 			HbeamHousingPV->SetTranslation(HbeamHousingTlate);
-			HbeamHousingPV->CheckOverlaps();
+			if(OverlapCheck) HbeamHousingPV->CheckOverlaps();
 		}
 	}
 
 	//////////////////////////////////////////
 	// Additional PE
 	//////////////////////////////////////////
+	G4Box *addPEBox1 = nullptr;
+	G4Box *addPEBox2 = nullptr;
+	G4LogicalVolume *addPE1LV = nullptr;
+	G4LogicalVolume *addPE2LV = nullptr;
+
 	if(fAdditionalPE)	{
-		G4Box *addPEBox;
-		G4LogicalVolume *addPELV;
 		G4ThreeVector addPEPos = G4ThreeVector( 
 				HBeam_housingX/2. - HBeam_size - dist[0]/2.,
 				HBeam_housingY/2. - HBeam_size*3/2 - len[0]/2.,
@@ -1508,33 +1175,33 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 			addPEPos[0] -= dist[i-1]/2. + HBeam_size + dist[i]/2.;
 			for(int j = 0; j < 4; j ++){
 				if(j == 0 || j == 3){
-					addPEBox = new G4Box("addPEBox", 
+					addPEBox1 = new G4Box("addPEBox", 
 							dist[i]/2.+ HBeam_size/2.-HBeam_thickness,
 							len[j]/4. + HBeam_size/4.- HBeam_thickness - 5*solidBooleanTolBig,
 							HBeam_size/2.- HBeam_thickness);
 
-					addPELV = new G4LogicalVolume(addPEBox, _polyethylene, "additionalPE_LV" );
-					addPELV->SetVisAttributes(shieldPE_VisAttr);
+					addPE1LV = new G4LogicalVolume(addPEBox1, _polyethylene, "additionalPE_LV" );
+					addPE1LV->SetVisAttributes(shieldPE_VisAttr);
 
 					if(j == 3){
 						addPEPos[1] -= (len[j] - HBeam_size*3)/4.;
 					}
 					addPEPos[1] -= (len[j]-HBeam_size)/4.;
-					new G4PVPlacement(nullptr, addPEPos, addPELV, "additionalPE_PV", HbeamHousingLV, false, 0, OverlapCheck);
+					new G4PVPlacement(nullptr, addPEPos, addPE1LV, "additionalPE1_PV", HbeamHousingLV, false, 0, OverlapCheck);
 					addPEPos[1] -= (len[j] + HBeam_size*3)/4.;
 				}
 				else{
-					addPEBox = new G4Box("addPEBox", 
+					addPEBox2 = new G4Box("addPEBox", 
 							dist[i]/2.+ HBeam_size/2.-HBeam_thickness,
 							len[j]/2. + HBeam_size/2.- HBeam_thickness - solidBooleanTol,
 							HBeam_size/2.- HBeam_thickness);
 
-					addPELV = new G4LogicalVolume(addPEBox, _polyethylene, "additionalPE_LV" );
-					addPELV->SetVisAttributes(shieldPE_VisAttr);
+					addPE2LV = new G4LogicalVolume(addPEBox2, _polyethylene, "additionalPE_LV" );
+					addPE2LV->SetVisAttributes(shieldPE_VisAttr);
 
 					addPEPos[1] -= len[j]/2.;
 					if( i!=2 && i!=3 ) {
-						new G4PVPlacement(nullptr, addPEPos, addPELV, "additionalPE_PV", HbeamHousingLV, false, 0, OverlapCheck);
+						new G4PVPlacement(nullptr, addPEPos, addPE2LV, "additionalPE2_PV", HbeamHousingLV, false, 0, OverlapCheck);
 					}
 					addPEPos[1] -= len[j]/2. + HBeam_size;
 				}
@@ -1546,10 +1213,9 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 
 	//////////////////////////////////////////////////////
 	if (fDbgMsgOn) {
-		cout << " ==================================" << endl;
-		cout << "  Outer Shield Part Debugging Message ( length: mm, weight: kg)" << endl;
-		cout << " " << endl;
-		cout << " World demension(box): " 
+		cout << "\n ================================ Outer shields ======" << endl;
+		cout << " (length: mm, weight: kg, global coordinate)\n" << endl;
+		cout << " World dimension(box): " 
 			<< worldSolid->GetXHalfLength()*2 << " x " 
 			<< worldSolid->GetYHalfLength()*2 << " x " 
 			<< worldSolid->GetZHalfLength()*2 << endl;
@@ -1559,7 +1225,7 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 			cout << "     top mass    : " << logiTopRock->GetMass(true,false)/kg << endl;
 			cout << " PE (box) " << endl; //..............................
 			cout << "     mass      : " << shieldPELV->GetMass(true,false)/kg << endl;
-			cout << "     demension : " 
+			cout << "     dimension : " 
 				<< shieldPEBox->GetXHalfLength()*2 << " x " 
 				<< shieldPEBox->GetYHalfLength()*2 << " x " 
 				<< shieldPEBox->GetZHalfLength()*2 << endl;
@@ -1570,163 +1236,212 @@ G4LogicalVolume *AmoreDetectorConstruction::ConstructAMoRE200_OD() {
 		}
 		else if(fNeutronMode){
 			cout << " Cavern" << endl;
-			cout << "     demension (r): " << neutronmodeCavern->GetOuterRadius() << endl; 
+			cout << "     dimension (r): " << neutronmodeCavern->GetOuterRadius() << endl; 
 			cout << "     coordinate   : " << physCavern->GetTranslation() << endl;
 		}
 		else{
 			cout << " Rock floor (tube)" << endl;
 			cout << "     mass             : " << logiFloor->GetMass(true,false)/kg << endl;
-			cout << "     demension (r x h): " 
-				<< floorSolid->GetOuterRadius() << " x "  
-				<< floorSolid->GetZHalfLength()*2 << endl;
+			cout << "     dimension (r x h): " 
+				<< floorSolid->GetOuterRadius() << " x " << floorSolid->GetZHalfLength()*2 << endl;
 			cout << "     coordinate       : " << fFloorPhysical->GetTranslation() << endl;
 			cout << " Rock body (hemisphere)" << endl;
 			cout << "     mass         : " << logiRock->GetMass(true,false)/kg << endl;
-			cout << "     demension (r): " << solidRock->GetOuterRadius() << endl;
+			cout << "     dimension (r): " << solidRock->GetOuterRadius() << endl;
 			cout << "     coordinate   : " << fRockPhysical->GetTranslation() << endl;
 			cout << " Cavern ( '" << AmoreDetectorConstruction::GetCavernTypeName(whichCavernType) 
 				<< "' option selected )" << endl;
 			if(whichCavernType==kCavern_RealModel){
-				cout << "     demension (box part): " 
+				cout << "     dimension (box part): " 
 					<< cavernLoafBox->GetXHalfLength()*2 << " x " 
 					<< cavernLoafBox->GetYHalfLength()*2 << " x " 
 					<< cavernLoafBox->GetZHalfLength()*2 << endl;
 			}
-			else if(whichCavernType==kCavern_Toy_HemiSphere)	cout << "     demension (r): " << hemiSphereCavern->GetOuterRadius() << endl;
-			cout << "     coordinate   : " << physCavern->GetTranslation() << endl;
+			else if(whichCavernType==kCavern_Toy_HemiSphere)	cout << "     dimension (r): " << hemiSphereCavern->GetOuterRadius() << endl;
+			cout << "     coordinate   : " << fRockPhysical->GetTranslation() + physCavern->GetTranslation() << endl;
 		}
 
 		if(!fRockgammaMode){
-		cout << " PS veto housing " << endl; //.......................
-		cout << "     demension : " 
-			<< plasticVetoHousing1Box->GetXHalfLength()*2 << " x " 
-			<< plasticVetoHousing1Box->GetYHalfLength()*2 << " x " 
-			<< plasticVetoHousing1Box->GetZHalfLength()*2 << endl;
-		cout << "     thickness : " 
-			<< plasticVetoHousing1Box->GetXHalfLength() - shieldPEBox->GetXHalfLength() << endl;
-		cout << "     coordinate: " 
-			<< physCavern->GetTranslation() + vetoHousing1PV->GetTranslation() << endl;
-		cout << " PE (box) " << endl; //..............................
-		cout << "     mass      : " << shieldPELV->GetMass(true,false)/kg << endl;
-		cout << "     demension : " 
-			<< shieldPEBox->GetXHalfLength()*2 << " x " 
-			<< shieldPEBox->GetYHalfLength()*2 << " x " 
-			<< shieldPEBox->GetZHalfLength()*2 << endl;
-		cout << "     thickness : " 
-			<< shieldPEBox->GetXHalfLength()-shieldBoricAcidBox->GetXHalfLength() << endl;
-		cout << "     coordinate: " 
-			<< physCavern->GetTranslation() + vetoHousing1PV->GetTranslation() 
-			+ shieldPEPV->GetTranslation() << endl;
-		cout << " BoricAcid " << endl; //..............................
-		cout << "     mass      : " << shieldBoricAcidLV->GetMass(true,false)/kg << endl;
-		cout << "     demension : " 
-			<< shieldBoricAcidBox->GetXHalfLength()*2 << " x "
-			<< shieldBoricAcidBox->GetYHalfLength()*2 << " x " 
-			<< shieldBoricAcidBox->GetZHalfLength()*2 << endl;
-		cout << "     thickness : " 
-			<< shieldBoricAcidBox->GetXHalfLength() - leadShieldBox->GetXHalfLength() << endl;
-		cout << "     coordinate: " 
-			<< physCavern->GetTranslation() + vetoHousing1PV->GetTranslation() 
-			+ shieldPEPV->GetTranslation() + shieldBoricAcidPV->GetTranslation() << endl;
-		cout << " Lead shield " << endl; //..............................
-		cout << "     mass      : " << leadShieldLV->GetMass(true,false)/kg << endl;
-		cout << "     demension : " 
-			<< leadShieldBox->GetXHalfLength()*2 << " x "
-			<< leadShieldBox->GetYHalfLength()*2 << " x " 
-			<< leadShieldBox->GetZHalfLength()*2 << endl;
-		cout << "     thickness : " 
-			<< leadShieldBox->GetXHalfLength() - CuShieldBox->GetXHalfLength() << endl;
-		cout << "     coordinate: " 
-			<< physCavern->GetTranslation() + vetoHousing1PV->GetTranslation() 
-			+ shieldPEPV->GetTranslation() + shieldBoricAcidPV->GetTranslation() 
-			+ f200_VetoMaterialPhysical->GetTranslation() + BufferMother->GetTranslation() << endl;
-		cout << " Copper shield " << endl; //..............................
-		cout << "     mass      : " << CuShieldLV->GetMass(true,false)/kg << endl;
-		cout << "     demension : " 
-			<< CuShieldBox->GetXHalfLength()*2 << " x "
-			<< CuShieldBox->GetYHalfLength()*2 << " x " 
-			<< CuShieldBox->GetZHalfLength()*2 << endl;
-		cout << "     thickness : " 
-			<< CuShieldBox->GetXHalfLength() - boricAcidBox->GetXHalfLength() << endl;
-		cout << "     coordinate: " 
-			<< physCavern->GetTranslation() + vetoHousing1PV->GetTranslation() 
-			+ shieldPEPV->GetTranslation() + shieldBoricAcidPV->GetTranslation() 
-			+ f200_VetoMaterialPhysical->GetTranslation() + BufferMother->GetTranslation() 
-			+ GetPhysicalVolumeByName("CopperShield_PV")->GetTranslation() << endl;
-		cout << " Inner boric acid " << endl; //..............................
-		cout << "     mass      : " << boricAcidLV->GetMass(true,false)/kg << endl;
-		cout << "     demension : " 
-			<< boricAcidBox->GetXHalfLength()*2 << " x "
-			<< boricAcidBox->GetYHalfLength()*2 << " x " 
-			<< boricAcidBox->GetZHalfLength()*2 << endl;
-		cout << "     thickness : " 
-			<< boricAcidBox->GetXHalfLength() - IDspaceBox->GetXHalfLength() << endl;
-		cout << "     coordinate: " 
-			<< physCavern->GetTranslation() + vetoHousing1PV->GetTranslation() 
-			+ shieldPEPV->GetTranslation() + shieldBoricAcidPV->GetTranslation() 
-			+ f200_VetoMaterialPhysical->GetTranslation() + BufferMother->GetTranslation() 
-			+ GetPhysicalVolumeByName("CopperShield_PV")->GetTranslation() 
-			+ GetPhysicalVolumeByName("InnerBoricAcid_PV")->GetTranslation() << endl;
-		cout << " Inner detector space " << endl; //..............................
-		cout << "     demension : " 
-			<< IDspaceBox->GetXHalfLength()*2 << " x "
-			<< IDspaceBox->GetYHalfLength()*2 << " x " 
-			<< IDspaceBox->GetZHalfLength()*2 << endl;
-		cout << " PS supporter (Aluminium profile) mass: "
-			<< plasticVetoSupporterV1LV->GetMass(true,false)/kg << "(" 
-			<< plasticVetoSupporterV1Box->GetXHalfLength()*2. << "x" 
-			<< plasticVetoSupporterV1Box->GetYHalfLength()*2. << "x" 
-			<< plasticVetoSupporterV1Box->GetZHalfLength()*2. << ") + " 
-			<< plasticVetoSupporterV2LV->GetMass(true,false)/kg << "(" 
-			<< plasticVetoSupporterV2Box->GetXHalfLength()*2. << "x" 
-			<< plasticVetoSupporterV2Box->GetYHalfLength()*2. << "x" 
-			<< plasticVetoSupporterV2Box->GetZHalfLength()*2. << ") + " 
-			<< plasticVetoSupporterH1LV->GetMass(true,false)/kg << "(" 
-			<< plasticVetoSupporterH1Box->GetXHalfLength()*2. << "x" 
-			<< plasticVetoSupporterH1Box->GetYHalfLength()*2. << "x" 
-			<< plasticVetoSupporterH1Box->GetZHalfLength()*2. << ") + " 
-			<< plasticVetoSupporterH2LV->GetMass(true,false)/kg << "(" 
-			<< plasticVetoSupporterH2Box->GetXHalfLength()*2. << "x" 
-			<< plasticVetoSupporterH2Box->GetYHalfLength()*2. << "x" 
-			<< plasticVetoSupporterH2Box->GetZHalfLength()*2. << ")" << endl;
-		cout << " PS veto stainless flame" << endl;
-		cout << "     mass              : " << plasticVetoLV[0]->GetMass(true,false)/kg << endl;
-		cout << "     demension         : " 
-			<< plasticVetoBox[0]->GetXHalfLength()*2 << " x "
-			<< plasticVetoBox[0]->GetYHalfLength()*2 << " x " 
-			<< plasticVetoBox[0]->GetZHalfLength()*2 << endl;
-		cout << " PS veto Aluminium plate mass  : " << aluminiumHolderLV[0]->GetMass(true,false)/kg << endl;
-		cout << " PS veto detector ( # of veto: " << f200_VetoTotCNum
-			<< " =>  barrel: " << nVetoZ*8 << ", vertical: " << nVetoV*2 << ", bottom: " << nVetoB*2 << ")" << endl;
-		cout << " Plastic scintillator" << endl;
-		cout << "     demension: " 
-			<< plasticScintBox[0]->GetXHalfLength()*2 << " x " 
-			<< plasticScintBox[0]->GetYHalfLength()*2 << " x " 
-			<< plasticScintBox[0]->GetZHalfLength()*2 << endl;
-		cout << " WC veto housing: " << endl;
-		cout << "     water housing mass: " << shieldWaterHousingLV->GetMass(true,false)/kg << endl;
-		cout << "     water mass        : " << shieldWaterTankLV->GetMass(true,false)/kg << endl;
-		cout << "     boricacid mass    : " << shieldHatBoricLV->GetMass(true,false)/kg << endl;
-		cout << "     demension (out)   : " 
-			<< shieldWaterHousingBox->GetXHalfLength()*2 << " x " 
-			<< shieldWaterHousingBox->GetYHalfLength()*2 << " x " 
-			<< shieldWaterHousingBox->GetZHalfLength()*2 << endl;
-		cout << "     demension (inner) : " 
-			<< shieldHatAirBox->GetXHalfLength()*2 << " x " 
-			<< shieldHatAirBox->GetYHalfLength()*2 << " x " 
-			<< shieldHatAirBox->GetZHalfLength()*2 << endl;
+			/*
+			cout << " ============================ Muon Veto ======" << endl;
+			cout << " PS veto housing " << endl; //.......................
+			cout << "     dimension : " 
+				<< plasticVetoHousing1Box->GetXHalfLength()*2 << " x " 
+				<< plasticVetoHousing1Box->GetYHalfLength()*2 << " x " 
+				<< plasticVetoHousing1Box->GetZHalfLength()*2 << endl;
+			cout << "     thickness : " 
+				<< plasticVetoHousing1Box->GetXHalfLength() - shieldPEBox->GetXHalfLength() << endl;
+			cout << "     coordinate: " 
+				<< physCavern->GetTranslation() + vetoHousing1PV->GetTranslation() << endl;
+			cout << " PS supporter (Aluminium profile) mass: \n"
+				<< "     " << plasticVetoSupporterV1LV->GetMass(true,false)/kg << "(" 
+				<< plasticVetoSupporterV1Box->GetXHalfLength()*2. << "x" 
+				<< plasticVetoSupporterV1Box->GetYHalfLength()*2. << "x" 
+				<< plasticVetoSupporterV1Box->GetZHalfLength()*2. << ") \n" 
+				<< "     " << plasticVetoSupporterV2LV->GetMass(true,false)/kg << "(" 
+				<< plasticVetoSupporterV2Box->GetXHalfLength()*2. << "x" 
+				<< plasticVetoSupporterV2Box->GetYHalfLength()*2. << "x" 
+				<< plasticVetoSupporterV2Box->GetZHalfLength()*2. << ") \n" 
+				<< "     " << plasticVetoSupporterH1LV->GetMass(true,false)/kg << "(" 
+				<< plasticVetoSupporterH1Box->GetXHalfLength()*2. << "x" 
+				<< plasticVetoSupporterH1Box->GetYHalfLength()*2. << "x" 
+				<< plasticVetoSupporterH1Box->GetZHalfLength()*2. << ") \n" 
+				<< "     " << plasticVetoSupporterH2LV->GetMass(true,false)/kg << "(" 
+				<< plasticVetoSupporterH2Box->GetXHalfLength()*2. << "x" 
+				<< plasticVetoSupporterH2Box->GetYHalfLength()*2. << "x" 
+				<< plasticVetoSupporterH2Box->GetZHalfLength()*2. << ")" << endl;
+			cout << " PS veto stainless flame" << endl;
+			cout << "     mass       : " << plasticVetoLV[0]->GetMass(true,false)/kg << endl;
+			cout << "     dimension  : " 
+				<< plasticVetoBox[0]->GetXHalfLength()*2 << " x "
+				<< plasticVetoBox[0]->GetYHalfLength()*2 << " x " 
+				<< plasticVetoBox[0]->GetZHalfLength()*2 << endl;
+			cout << "     coordinate : " <<  physCavern->GetTranslation() + vetoHousing1PV->GetTranslation() 
+				+ GetPhysicalVolumeByName("PlasticVeto0_PV")->GetTranslation() << endl;
+			cout << " PS veto Aluminium plate " << endl;
+			cout << "     mass      : " << aluminiumHolderLV[0]->GetMass(true,false)/kg << endl;
+			cout << "     dimension : " <<  plasticScintHolderBox[0]->GetXHalfLength()*2 << " x "
+				<<  plasticScintHolderBox[0]->GetYHalfLength()*2 << " x "
+				<<  plasticScintHolderBox[0]->GetZHalfLength()*2 << endl;
+			cout << " Plastic scintillator" << endl;
+			cout << "     dimension: " 
+				<< plasticScintBox[0]->GetXHalfLength()*2 << " x " 
+				<< plasticScintBox[0]->GetYHalfLength()*2 << " x " 
+				<< plasticScintBox[0]->GetZHalfLength()*2 << endl;
+			cout << "     mass     : " << plasticScintOLV[0]->GetMass(true,false)/kg << endl;
+			cout << " PS veto detector ( # of veto: " << f200_VetoTotCNum
+				<< " =>  barrel: " << nVetoZ*8 << ", bottom: " << nVetoB*2 << ")" << endl;
+			cout << " ============================= Bottom shields ======" << endl;
+			cout << " PE (box) " << endl; //..............................
+			cout << "     mass      : " << shieldPELV->GetMass(true,false)/kg << endl;
+			cout << "     dimension : " 
+				<< shieldPEBox->GetXHalfLength()*2 << " x " 
+				<< shieldPEBox->GetYHalfLength()*2 << " x " 
+				<< shieldPEBox->GetZHalfLength()*2 << endl;
+			cout << "     thickness : " 
+				<< shieldPEBox->GetXHalfLength()-shieldBoricAcidBox->GetXHalfLength() << endl;
+			cout << "     coordinate: " 
+				<< physCavern->GetTranslation() + vetoHousing1PV->GetTranslation() 
+				+ shieldPEPV->GetTranslation() << endl;
+			cout << " BoricAcid " << endl; //..............................
+			cout << "     mass      : " << shieldBoricAcidLV->GetMass(true,false)/kg << endl;
+			cout << "     dimension : " 
+				<< shieldBoricAcidBox->GetXHalfLength()*2 << " x "
+				<< shieldBoricAcidBox->GetYHalfLength()*2 << " x " 
+				<< shieldBoricAcidBox->GetZHalfLength()*2 << endl;
+			cout << "     thickness : " 
+				<< shieldBoricAcidBox->GetXHalfLength() - leadShieldBox->GetXHalfLength() << endl;
+			cout << "     coordinate: " 
+				<< physCavern->GetTranslation() + vetoHousing1PV->GetTranslation() 
+				+ shieldPEPV->GetTranslation() + shieldBoricAcidPV->GetTranslation() << endl;
+			cout << " Lead shield " << endl; //..............................
+			cout << "     mass      : " << leadShieldLV->GetMass(true,false)/kg << endl;
+			cout << "     dimension : " 
+				<< leadShieldBox->GetXHalfLength()*2 << " x "
+				<< leadShieldBox->GetYHalfLength()*2 << " x " 
+				<< leadShieldBox->GetZHalfLength()*2 << endl;
+			cout << "     thickness : " 
+				<< leadShieldBox->GetXHalfLength() - ThinLeadShieldBox->GetXHalfLength() << endl;
+			cout << "     coordinate: " 
+				<< physCavern->GetTranslation() + vetoHousing1PV->GetTranslation() 
+				+ shieldPEPV->GetTranslation() + shieldBoricAcidPV->GetTranslation() 
+				+ f200_VetoMaterialPhysical->GetTranslation() + BufferMother->GetTranslation() << endl;
+			cout << " Thin lead shield " << endl; //..............................
+			cout << "     mass      : " << ThinLeadShieldLV->GetMass(true,false)/kg << endl;
+			cout << "     dimension : " 
+				<< ThinLeadShieldBox->GetXHalfLength()*2 << " x "
+				<< ThinLeadShieldBox->GetYHalfLength()*2 << " x " 
+				<< ThinLeadShieldBox->GetZHalfLength()*2 << endl;
+			cout << "     thickness : " 
+				<< ThinLeadShieldBox->GetXHalfLength() - boricAcidBox->GetXHalfLength() << endl;
+			cout << "     coordinate: " 
+				<< physCavern->GetTranslation() + vetoHousing1PV->GetTranslation() 
+				+ shieldPEPV->GetTranslation() + shieldBoricAcidPV->GetTranslation() 
+				+ f200_VetoMaterialPhysical->GetTranslation() + BufferMother->GetTranslation() 
+				+ GetPhysicalVolumeByName("ThinLeadShield_PV")->GetTranslation() << endl;
+			cout << " Inner boric acid " << endl; //..............................
+			cout << "     mass      : " << boricAcidLV->GetMass(true,false)/kg << endl;
+			cout << "     dimension : " 
+				<< boricAcidBox->GetXHalfLength()*2 << " x "
+				<< boricAcidBox->GetYHalfLength()*2 << " x " 
+				<< boricAcidBox->GetZHalfLength()*2 << endl;
+			cout << "     thickness : " 
+				<< boricAcidBox->GetXHalfLength() - IDspaceBox->GetXHalfLength() << endl;
+			cout << "     coordinate: " 
+				<< physCavern->GetTranslation() + vetoHousing1PV->GetTranslation() 
+				+ shieldPEPV->GetTranslation() + shieldBoricAcidPV->GetTranslation() 
+				+ f200_VetoMaterialPhysical->GetTranslation() + BufferMother->GetTranslation() 
+				+ GetPhysicalVolumeByName("ThinLeadShield_PV")->GetTranslation()
+				+ GetPhysicalVolumeByName("InnerBoricAcid_PV")->GetTranslation() << endl;
+			cout << " Inner detector space " << endl; //..............................
+			cout << "     dimension : " 
+				<< IDspaceBox->GetXHalfLength()*2 << " x "
+				<< IDspaceBox->GetYHalfLength()*2 << " x " 
+				<< IDspaceBox->GetZHalfLength()*2 << endl;
+			cout << " ============================= Upper shields ======" << endl;
+			if(fAdditionalPE){
+				cout << " Additional PE shield" << endl;
+				cout << "     mass        : " << addPE1LV->GetMass(true,false)/kg 
+					<< ", " << addPE2LV->GetMass(true,false)/kg << endl;
+				cout << "     dimension(1): " << addPEBox1->GetXHalfLength()*2 << " x " 
+					<< addPEBox1->GetYHalfLength()*2 << " x " 
+					<< addPEBox1->GetZHalfLength()*2 << endl;
+				cout << "     dimension(2): " << addPEBox2->GetXHalfLength()*2 << " x " 
+					<< addPEBox2->GetYHalfLength()*2 << " x " 
+					<< addPEBox2->GetZHalfLength()*2 << endl;
+				cout << "     coordinate  : " << GetPhysicalVolumeByName("additionalPE1_PV")->GetTranslation()
+					+ physCavern->GetTranslation() + GetPhysicalVolumeByName("HbeamHousing_PV")->GetTranslation() << ", " 
+					<< GetPhysicalVolumeByName("additionalPE2_PV")->GetTranslation()
+					+ physCavern->GetTranslation() + GetPhysicalVolumeByName("HbeamHousing_PV")->GetTranslation() << endl;
+			}
+			*/
+			cout << " WC veto housing " << endl;
+			cout << "     mass              : " << shieldWaterHousingLV->GetMass(true,false)/kg << endl;
+			cout << "     dimension (out)   : " 
+				<< shieldWaterHousingBox->GetXHalfLength()*2 << " x " 
+				<< shieldWaterHousingBox->GetYHalfLength()*2 << " x " 
+				<< shieldWaterHousingBox->GetZHalfLength()*2 << endl;
+			cout << "     dimension (inner) : " 
+				<< shieldHatAirBox->GetXHalfLength()*2 << " x " 
+				<< shieldHatAirBox->GetYHalfLength()*2 << " x " 
+				<< shieldHatAirBox->GetZHalfLength()*2 << endl;
+			cout << "     thickness         : " << waterhousing_thickness << endl;
+			cout << "     coordinate        : " << shieldWaterHousingPV->GetTranslation() 
+				+ physCavern->GetTranslation() << endl;
+			cout << " WC water" << endl;
+			cout << "     mass      : " << shieldWaterTankLV->GetMass(true,false)/kg << endl;
+			cout << "     dimension : " << shieldWaterTankBox->GetXHalfLength()*2 << " x "
+				<< shieldWaterTankBox->GetYHalfLength()*2 << " x "
+				<< shieldWaterTankBox->GetZHalfLength()*2 << endl;
+			cout << "     thickness : " << watertank_thickness << "(top thickness: " << watertank_top_thickness << ")" << endl;
+			cout << "     coordinate: " << shieldWaterTankPV->GetTranslation() 
+				+ shieldWaterHousingPV->GetTranslation() + physCavern->GetTranslation() << endl;
+			cout << " Hat Aluminium plate " << endl;
+			cout << "     mass      : " << HatAlPlateLV->GetMass(true,false)/kg << endl;
+			cout << "     dimension : " << HatBeamHousingInBox->GetXHalfLength()*2 << " x " 
+				<< HatBeamHousingInBox->GetYHalfLength()*2 << " x " 
+				<< HatBeamHousingInBox->GetZHalfLength()*2 << endl;
+			cout << "     thickness : " << HatAlPlate_thickness << endl; 
+			cout << "     coordinate: " << HatAlPlatePV->GetTranslation() + physCavern->GetTranslation() << endl;
+			cout << " Hat boric acid " << endl;
+			cout << "     mass      : " << shieldHatBoricLV->GetMass(true,false)/kg << endl;
+			cout << "     dimension : " << HatAlPlateInBox->GetXHalfLength()*2 << " x " 
+				<< HatAlPlateInBox->GetYHalfLength()*2 << " x " 
+				<< HatAlPlateInBox->GetZHalfLength()*2 << endl;
+			cout << "     thickness : " << boricacid_thickness << endl; 
+			cout << "     coordinate: " << shieldHatBoricPV->GetTranslation() + physCavern->GetTranslation() << endl; 
 		}
 	}
 
+	cout << " end " << endl;
 	if(fRockgammaMode){
-		//retvalLV = logiRockShell;
-		//retvalLV = logiTopRock;
 		retvalLV = shieldHousingLV;
 	}
 	else {
 		retvalLV  = logiCavern;
 	}
 	return retvalLV;
+
 }
 
 ////////////////////////////////////////////////////////////////

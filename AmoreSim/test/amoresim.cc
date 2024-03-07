@@ -6,13 +6,17 @@
   This was modified for Amore simlation by E.J.Jeon, May, 2015.
   */
 #include "G4Version.hh"
-
+/*
 #if G4VERSION_NUMBER >= 1000
 #include "AmoreSim/AmoreActionInitialization.hh"
 #include "G4MTRunManager.hh"
 #else
 #include "CupSim/CupPhysicsList.hh"
 #endif
+*/
+#include "AmoreSim/AmoreActionInitialization.hh"
+#include "G4MTRunManager.hh"
+#include "CupSim/CupPhysicsList.hh"
 
 #include "G4RunManager.hh"
 #include "G4UIExecutive.hh"
@@ -20,6 +24,7 @@
 #include "G4UItcsh.hh"
 #include "G4UIterminal.hh"
 #include "G4VisExecutive.hh"
+#include "G4VModularPhysicsList.hh"
 
 #include "AmoreSim/AmoreDetectorConstruction.hh"
 #include "AmoreSim/AmoreSimGitRevision.hh"
@@ -67,13 +72,16 @@ int main(int argc, char **argv) {
     cout << endl;
     if (argc == 2 && strcmp(argv[1], "git") == 0) return 0;
 
-        // Run manager
+// Run manager
+/*
 #ifdef G4MULTITHREADED
     G4MTRunManager *theRunManager = new G4MTRunManager;
     theRunManager->SetNumberOfThreads(1);
 #else
     G4RunManager *theRunManager = new G4RunManager;
 #endif
+*/
+    G4RunManager *theRunManager = new G4RunManager;
 
     // -- database
     CupParam &db(CupParam::GetDB());
@@ -86,6 +94,16 @@ int main(int argc, char **argv) {
     AmoreDetectorConstruction *theAmoreDetectorConstruction = new AmoreDetectorConstruction;
     theRunManager->SetUserInitialization(theAmoreDetectorConstruction);
 
+    if ( (db["omit_hadronic_processes"] != 0.0) ){
+        G4cout << "JW: Omitting hadronic processes" << G4endl;
+        theRunManager->SetUserInitialization(new CupPhysicsList());
+    } else {
+        AmorePLManager *thePLManager = new AmorePLManager();
+        thePLManager->BuildPhysicsList();
+        theRunManager->SetUserInitialization(thePLManager->GetPhysicsList());
+    }
+
+/*
 #if G4VERSION_NUMBER >= 1000
     AmorePLManager *thePLManager = new AmorePLManager();
     thePLManager->BuildPhysicsList();
@@ -93,6 +111,7 @@ int main(int argc, char **argv) {
 #else
     theRunManager->SetUserInitialization(new CupPhysicsList());
 #endif
+*/
 
     // Do not initialize here:  leave it for /run/initialize in prerun.mac
     // so we can define things at runtime before initialization

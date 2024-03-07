@@ -4,6 +4,7 @@
 #include "CupSim/CupPMTSD.hh"
 #include "CupSim/CupParam.hh"
 #include "CupSim/CupScintSD.hh"            // for making sensitive photocathodes
+#include "CupSim/CupVetoSD.hh"             // for making sensitive photocathodes
 #include "CupSim/CupTorusStack.hh"         // for making the cavern and LSC envelope
 #include "CupSim/Cup_PMT_LogicalVolume.hh" // for making PMT assemblies
 
@@ -44,37 +45,47 @@
 // == Construct Geometry for AMoRE-200 ======================================
 // uses parameters from database or file
 void AmoreDetectorConstruction::ConstructAMoRE200() {
-    // --- put in the Inner Detector tanks, PMTs, and details
-    G4LogicalVolume* odLV = ConstructAMoRE200_OD();
+	// --- put in the Inner Detector tanks, PMTs, and details
+	G4LogicalVolume* odLV = ConstructAMoRE200_OD();
 
-    // --- put in the Inner Detector tanks, PMTs, and details
-    ConstructAMoRE200_ID(odLV);
+	// --- put in the Inner Detector tanks, PMTs, and details
+	ConstructAMoRE200_ID(odLV);
+
+	if(!fRockgammaMode){
+		// --- put the Plastics Scintillator for Veto
+		ConstructAMoRE200_PSMD();
+		//--- put in the Water Cerenkov Muon Detector PMTs, and details
+		ConstructAMoRE200_WCMD();
+	}
+
 }
 
 void AmoreDetectorConstruction::ConstructAMoRE200_SDandField() {
-    //////////////////////////////
-    // --- TG sensitive detector
-    //////////////////////////////
-    // get pointer to logical volume
+	//////////////////////////////
+	// --- TG sensitive detector
+	//////////////////////////////
+	// get pointer to logical volume
 
-    CupScintSD *TGSD;
-    G4SDManager *SDman = G4SDManager::GetSDMpointer();
-    G4String SDname, VetoActiveMatPVName;
+	G4SDManager *SDman = G4SDManager::GetSDMpointer();
+	G4String SDname;
 
-    TGSD = new CupScintSD(SDname = "/CupDet/TGSD", f200_TotCrystalNum);
-    SDman->AddNewDetector(TGSD);
-		//f200_logiCrystalCell->SetSensitiveDetector(TGSD);
-		for(int i = 0; i < f200_TotCrystalNum; i++){
-			f200_logiCrystalCell[i]->SetSensitiveDetector(TGSD);
-		}
+	CupScintSD *TGSD = new CupScintSD(SDname = "/CupDet/TGSD", f200_TotCrystalNum);
+	// TGSD = new CupScintSD(SDname = "/cupdet/TGSD", f200_TotCrystalNum);
+	SDman->AddNewDetector(TGSD);
+	//f200_logiCrystalCell->SetSensitiveDetector(TGSD);
+	for(int i = 0; i < f200_TotCrystalNum; i++){
+		f200_logiCrystalCell[i]->SetSensitiveDetector(TGSD);
+	}
 
-		/*
-    G4LogicalVolume *logiGeWafer = f200_physGeWafer->GetLogicalVolume();
-    G4LogicalVolume *logiVacDisk = f200_physVacDisk->GetLogicalVolume();
-    CupPMTSD *pmtSD;
-    pmtSD = new CupPMTSD("/cupdet/pmt/MLCS", f200_CMOTotCNum + f200_CMOFloorCNum);
-    G4SDManager::GetSDMpointer()->AddNewDetector(pmtSD);
-    logiGeWafer->SetSensitiveDetector(pmtSD);
-    logiVacDisk->SetSensitiveDetector(pmtSD);
-		*/
+	CupVetoSD *PSMD = new CupVetoSD(SDname = "/cupdet/MuonVetoSD", f200_TotPSNum);
+	SDman->AddNewDetector(PSMD);
+	f200_logiVetoPSO->SetSensitiveDetector(PSMD);
+	f200_logiVetoPSI->SetSensitiveDetector(PSMD);
+
+/*
+	CupPMTSD *WCMD = new CupPMTSD(SDname = "/cupdet/pmt/inner", f200_TotPMTNum, 0, 10);
+	SDman->AddNewDetector(WCMD);
+	f200_logiPMTbody->SetSensitiveDetector(WCMD);
+	f200_logiPMTinner->SetSensitiveDetector(WCMD);
+*/
 }

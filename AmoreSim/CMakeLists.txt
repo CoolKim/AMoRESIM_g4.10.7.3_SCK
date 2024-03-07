@@ -80,7 +80,6 @@ set(AMORESIM_YEMI_MUON_FLUX_NAME "atHandeok_BIGNUM" CACHE STRING "Muon flux set 
 set(AMORESIM_Y2L_MUON_FLUX_NAME "atYangYangNew_BIGNUM" CACHE STRING "Muon flux set name to use for muon simulation at Y2L (AMoRE-Pilot/I)")
 set(AMORESIM_NEUTRON_FLUX_NAME "th_neut_bin1_uniform_1000" CACHE STRING "Neutron flux set name to use for this simulation")
 
-set(AMORESIM_VETO_CONF "WithBeam" CACHE STRING "Veto geometry configuration for this simulation")
 set(AMORESIM_JOB_NAME "scratch" CACHE STRING "Representative name for this compilation")
 if("${AMORESIM_JOB_NAME}" STREQUAL "")
     set(AMORESIM_JOB_NAME "scratch" FORCE)
@@ -135,6 +134,7 @@ set(RUN_SCRIPTS
     run_II_decay.sh
     run_I_muon.sh
     run_I_neut.sh
+    run_I_decay.sh #JW added: 29.Jan.2024
     run_Pilot_muon.sh
     run_Pilot_neut.sh
     run_Pilot_decay.sh
@@ -153,6 +153,7 @@ set(SIM_MACROS
     II_dc_internal.mac
     I_muonbckg.mac
     I_neutbckg.mac
+    I_dc_internal.mac #JW added: 29.Jan.2024
     Pilot_muonbckg.mac
     Pilot_neutbckg.mac
     Pilot_dc_external-pmt.mac

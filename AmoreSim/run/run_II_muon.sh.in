@@ -21,8 +21,9 @@ export AmoreDATA=$workdir"/AmoreSim/data"
 cd $workdir
 
 # path to muon flux data
+muonrunid=`expr $runid + 10000`
 pathmf="@MUON_YEMI_PATH@"
-mfname="YEMI_xdist15m_xsize10m_nevt100000_run$runid.txt"
+mfname="xdist15m_xsize10m_run"$muonrunid"_250000evts.txt"
 
 # number of events (will be setted automatically)
 #set nevt = 800

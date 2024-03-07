@@ -35,12 +35,11 @@ class AmoreDetectorConstruction : public CupDetectorConstruction {
 		G4bool fEnable_InnerDetector;
 		G4bool fEnable_Innermost;
 		G4bool fEnable_NeutronShield;
-		//G4bool fEnable_AdditionalPEShield;
 
-		G4int fNeutShieldingConf;
 		G4bool fNeutronMode;
 		G4bool fRockgammaMode;
 		G4bool fAdditionalPE;
+
 		G4bool fDbgMsgOn;
 		G4bool OverlapCheck;
 
@@ -52,6 +51,8 @@ class AmoreDetectorConstruction : public CupDetectorConstruction {
 		G4VPhysicalVolume *fCavernPhysical;
 		G4VPhysicalVolume *fRockPhysical;
 		G4VPhysicalVolume *fFloorPhysical;
+
+		G4LogicalVolume *fMyDetector_LMOCell_LV;
 
 		// AMoRE-Pilot LV and PV for SD information & Geometry settings
 		G4bool fPilot_Enable_TargetRoom;
@@ -134,12 +135,12 @@ class AmoreDetectorConstruction : public CupDetectorConstruction {
 		G4VisAttributes *fI_BrassBolt_VisAttr;
 
 		// AMoRE-II LV and PV for SD information
-		G4int f200_VetoTotCNum, f200_HatVetoTotCNum, f200_TotalVetoCNum;
+		G4int f200_TotPSNum, f200_TotPMTNum;
 		G4int f200_TotCrystalNum, f200_TotTowerNum;
 		G4LogicalVolume *f200_logiVetoPSO;
 		G4LogicalVolume *f200_logiVetoPSI;
-		G4LogicalVolume *f200_logiHatPSO;
-		G4LogicalVolume *f200_logiHatPSI;
+		G4LogicalVolume *f200_logiPMTbody;
+		G4LogicalVolume *f200_logiPMTinner;
 		//G4LogicalVolume *f200_logiCrystalCell;
 		G4LogicalVolume *f200_logiCrystalCell[1000];
 		G4VPhysicalVolume *f200_physGeWafer;
@@ -147,8 +148,6 @@ class AmoreDetectorConstruction : public CupDetectorConstruction {
 		G4VPhysicalVolume *f200_HatVetoMaterialPV;
 		G4VPhysicalVolume *f200_PSO_PV;
 		G4VPhysicalVolume *f200_PSI_PV;
-		G4VPhysicalVolume *f200_HatPSO_PV;
-		G4VPhysicalVolume *f200_HatPSI_PV;
 		G4VPhysicalVolume *f200_VetoActiveMaterialPV;
 		G4VPhysicalVolume *f200_FloorPEPhysical;
 		G4VPhysicalVolume *f200_CeilingPEPhysical;
@@ -178,12 +177,6 @@ class AmoreDetectorConstruction : public CupDetectorConstruction {
 			kPhase2,
 			kNumAMoRE200Phase
 		} ePhaseAMoRE200;
-
-		typedef enum {
-			kVeto_200323 = 0,
-			kVeto_Beam,
-			kNumVetoGeometries
-		} eVetoGeometry;
 
 		typedef enum {
 			kCavern_Toy_HemiSphere = 0,
@@ -218,11 +211,6 @@ class AmoreDetectorConstruction : public CupDetectorConstruction {
 		static inline eDetGeometry GetDetGeometryType() { return whichDetGeometry; }
 		virtual void SetWhichDetGeometry(eDetGeometry w) { whichDetGeometry = w; }
 
-		static inline int GetNumVetoGeometryTypes() { return kNumVetoGeometries; };
-		virtual G4String GetVetoGeometryTypeName(eVetoGeometry i);
-		static inline eVetoGeometry GetVetoGeometryType() { return whichVetoGeometry; }
-		inline void SetWhichVetoGeometry(eVetoGeometry w) { whichVetoGeometry = w; }
-
 		static inline int GetAMoRE200PhaseNumber() { return kNumAMoRE200Phase; };
 		virtual G4String GetAMoRE200PhaseName(ePhaseAMoRE200 i);
 		static inline ePhaseAMoRE200 GetAMoRE200PhaseType() { return whichAMoRE200Phase; }
@@ -256,7 +244,6 @@ class AmoreDetectorConstruction : public CupDetectorConstruction {
 		inline G4bool GetEnableInnerDetector() const { return fEnable_InnerDetector; }
 		inline G4bool GetEnableInnermost() const { return fEnable_Innermost; }
 		inline G4bool GetEnableNeutronShield() const { return fEnable_NeutronShield; }
-		//inline G4bool GetEnableAdditionalPEShield() const { return fEnable_AdditionalPEShield; }
 		inline G4bool GetNeutronMode() const { return fNeutronMode; }
 		inline G4bool GetRockgammaMode() const { return fRockgammaMode; }
 		inline G4bool GetAdditionalPE() const { return fAdditionalPE; }
@@ -309,7 +296,7 @@ class AmoreDetectorConstruction : public CupDetectorConstruction {
 		inline bool Judge_200_OVCBorder(const G4Step *aStep) const;
 
 		//protected:
-		G4Material *_mumetal, *_stycast, *_vinylt, *g10material, *PbMoO4;
+		G4Material *_mumetal, *_stycast, *_araldite, *_vinylt, *g10material, *PbMoO4;
 		G4Material *_B4CRubber24perCent;
 		G4Material *_SiRubber;
 		G4Material *_B4C;
@@ -363,7 +350,9 @@ class AmoreDetectorConstruction : public CupDetectorConstruction {
 				G4Material *filmMat, G4int TowerNum, G4int ModuleNum);
 		G4LogicalVolume *MakeTower_phase2(G4Material *towerMat, G4Material *crystalMat, G4Material *reflectorMat, 
 				G4Material *frameMat, G4Material *clampMat, G4Material *waferMat, G4Material *filmMat, G4int TowerNum);
-		G4LogicalVolume *ConstructAMoRE200_OD(); ///< make the AMoRE200 outer detector (water tank)
+		G4LogicalVolume *ConstructAMoRE200_OD(); ///< make the AMoRE200 outer detector
+		void ConstructAMoRE200_PSMD(); ///< make the AMoRE200 plastic scintillator muon detector
+		void ConstructAMoRE200_WCMD(); ///< make the AMoRE200 water cerenkov muon detector
 
 		void ConstructMyDetector();              ///< make the MyDetector
 
@@ -436,7 +425,6 @@ class AmoreDetectorConstruction : public CupDetectorConstruction {
 		G4VSolid *BuildPhotonFrameSolid(G4double, G4double);
 
 		static eDetGeometry whichDetGeometry;
-		static eVetoGeometry whichVetoGeometry;
 		static eCavernType whichCavernType;
 		static eNShieldConf whichNShieldingConf;
 		static ePhaseAMoRE200 whichAMoRE200Phase;

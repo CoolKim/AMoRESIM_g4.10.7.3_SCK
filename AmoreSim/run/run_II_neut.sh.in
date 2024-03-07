@@ -48,7 +48,7 @@ setup="neut"
 
 # run name
 #jobname="@AMORESIM_JOB_NAME@"
-jobname="neut"
+jobname="@AMORESIM_JOB_NAME@"
 
 # output directory (must contain mac log root directory)
 outdir="@SIMOUT_PATH@"

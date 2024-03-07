@@ -8,7 +8,7 @@
 #/run/verbose 2
 
 /detector/select AmoreDetector
-/detGeometry/select amore200
+/detGeometry/select amore200 #amore200, amoreI, amorepilot, mydetector
 #/detGeometry/select amoreI
 
 /detGeometry/DebugMode true
@@ -16,9 +16,8 @@
 /detGeometry/NeutronMode false
 /detGeometry/RockgammaMode false
 /detGeometry/AdditionalPE true
-/detGeometry/200/selectPhase AMoRE200_Phase1
-/detGeometry/200/selectVeto WithBeam
-/detGeometry/200/selectCavern Real_ARF #ToyHemiSphere
+/detGeometry/200/selectPhase AMoRE200_Phase1 #AMoRE200_Phase1, AMoRE200_Phase2
+/detGeometry/200/selectCavern Real_ARF #Real_ARF, ToyHemiSphere
 
 /detGeometry/Pilot/EnableMumetal false
 /detGeometry/Pilot/EnableTargetRoom true

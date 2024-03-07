@@ -106,11 +106,6 @@ AmoreDetectorMessenger::AmoreDetectorMessenger(AmoreDetectorConstruction *Amored
     EnableRealConfCmd->AvailableForStates(G4State_PreInit);
     EnableRealConfCmd->SetParameter(new G4UIparameter("enable", 'b', true));
 
-    VetoGeometrySelectCmd = new G4UIcommand("/detGeometry/200/selectVeto", this);
-    VetoGeometrySelectCmd->SetGuidance("Select which veto style you want to build");
-    VetoGeometrySelectCmd->AvailableForStates(G4State_PreInit);
-    VetoGeometrySelectCmd->SetParameter(new G4UIparameter("which", 's', true));
-
 		AMoRE200PhaseSelectCmd = new G4UIcommand("/detGeometry/200/selectPhase", this);
 		AMoRE200PhaseSelectCmd->SetGuidance("Select which phase you want to build");
 		AMoRE200PhaseSelectCmd->AvailableForStates(G4State_PreInit);
@@ -156,7 +151,6 @@ AmoreDetectorMessenger::AmoreDetectorMessenger(AmoreDetectorConstruction *Amored
 
 AmoreDetectorMessenger::~AmoreDetectorMessenger() {
     delete DetGeometrySelectCmd;
-    delete VetoGeometrySelectCmd;
 		delete AMoRE200PhaseSelectCmd;
     delete CavernTypeSelectCmd;
 
@@ -208,27 +202,6 @@ void AmoreDetectorMessenger::SetNewValue(G4UIcommand *command, G4String newValue
                 }
             }
             G4cerr << "Unknown detector geometry style " << newValues << G4endl;
-        }
-    } else if (command == VetoGeometrySelectCmd) {
-        if (newValues.length() == 0) {
-            G4cout << "Available veto geometries(for AMoRE-II): ";
-            for (int i = 0; i < AmoreDetector->GetNumVetoGeometryTypes(); i++)
-                G4cout << " "
-                       << AmoreDetector->GetVetoGeometryTypeName(
-                              static_cast<AmoreDetectorConstruction::eVetoGeometry>(i));
-            G4cout << G4endl;
-        } else {
-            for (int i = 0; i < AmoreDetector->GetNumVetoGeometryTypes(); i++) {
-                AmoreDetectorConstruction::eVetoGeometry nowEnum =
-                    static_cast<AmoreDetectorConstruction::eVetoGeometry>(i);
-                if (newValues.compare(AmoreDetector->GetVetoGeometryTypeName(nowEnum)) == 0) {
-                    G4cout << "VetoGeom/select " << AmoreDetector->GetVetoGeometryTypeName(nowEnum)
-                           << G4endl;
-                    AmoreDetector->SetWhichVetoGeometry(nowEnum);
-                    return;
-                }
-            }
-            G4cerr << "Unknown veto geometry type " << newValues << G4endl;
         }
     } else if (command == AMoRE200PhaseSelectCmd) {
 			if( newValues.length() == 0){
@@ -344,8 +317,6 @@ G4String AmoreDetectorMessenger::GetCurrentValue(G4UIcommand *command) {
     // GeometrySelectCmd
     if (command == DetGeometrySelectCmd) {
         return AmoreDetector->GetDetGeometryTypeName(AmoreDetector->GetWhichDetGeometry());
-    } else if (command == VetoGeometrySelectCmd) {
-        return AmoreDetector->GetVetoGeometryTypeName(AmoreDetector->GetVetoGeometryType());
     } else if (command == AMoRE200PhaseSelectCmd) {
 			  return AmoreDetector->GetAMoRE200PhaseName(AmoreDetector->GetAMoRE200PhaseType());
 		}else if (command == CavernTypeSelectCmd) {

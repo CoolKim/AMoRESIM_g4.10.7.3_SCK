@@ -1,3 +1,12 @@
 #!/bin/bash
 
-export ROOT_INCLUDE_PATH=@CONAN_INCLUDE_DIRS_MCOBJS@
+source @ROOT_BINARY_DIR@/thisroot.sh
+source @Geant4_INCLUDE_DIR@/../../bin/geant4.sh
+workdir="@AMORESIM_WORK_DIR@"
+
+export SIMOUT_PATH="@AMORESIM_WORK_DIR@/AmoreSim/output"
+export MCOBJS_PATH="@AMORESIM_WORK_DIR@/MCObjs"
+export MUON_PATH="/proj/internal_group/cup_mc/SPECTRUM/Muon/muGen"
+export NEUTRON_PATH="/proj/internal_group/cup_mc/SPECTRUM/Neutron/nGen/dist6000"
+export CupDATA=$workdir"/CupSim/data"
+export AmoreDATA=$workdir"/AmoreSim/data"

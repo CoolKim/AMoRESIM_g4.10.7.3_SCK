@@ -29,7 +29,8 @@ void AmorePhysicsList::ConstructProcess() {
         ConstructEM();
         G4cout << "EM Physics is ConstructEM(): default!" << G4endl;
     }
-    if (fOpName == "amorephysicsOp") {
+    //if (fOpName == "amorephysicsOp") { // JW: This is difference between EJ released version and used version
+    if (fEMName == "amorephysicsOp") {
         auto a = new AmorePhysicsOp();
         a->ConstructProcess();
     } else {

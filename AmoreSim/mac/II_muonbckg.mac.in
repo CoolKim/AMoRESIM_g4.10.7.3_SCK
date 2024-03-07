@@ -11,19 +11,16 @@
 #############################
 ## Select Detector Geometry
 #############################
+/detGeometry/DebugMode false
+/detGeometry/OverlapCheck false
+
+/detGeometry/200/selectPhase AMoRE200_Phase1 #AMoRE200_Phase1, AMoRE200_Phase2
+/detGeometry/200/selectCavern Real_ARF #Real_ARF, ToyHemiSphere
+
 /detGeometry/select amore200
 /detGeometry/NeutronMode false
+/detGeometry/RockgammaMode false
 /detGeometry/AdditionalPE true
-
-/detGeometry/200/selectVeto WithBeam
-/detGeometry/200/selectHat option1
-/detGeometry/200/selectCavern ToyHemiSphere
-
-#/detGeometry/Pilot/EnableMumetal false
-#/detGeometry/Pilot/EnableTargetRoom true
-
-#/detGeometry/I/EnableSuperCMagneticShield true
-#/detGeometry/I/EnableCrystalArray true
 
 /detGeometry/EnableOrigGeom true
 /detGeometry/EnableScint true
@@ -32,7 +29,6 @@
 /detGeometry/EnableInnermost true
 /detGeometry/EnableNeutronShield true
 
-#/detGeometry/nShieldingToyConf RealConf
 
 ####################
 ## Set Ntuple Contents (On/Off) default:0
@@ -40,9 +36,9 @@
 /ntuple/primary 1
 /ntuple/track 1
 /ntuple/step 1
-/ntuple/muon 0
-/ntuple/photon 0
-/ntuple/scint 0
+/ntuple/muon 1
+/ntuple/photon 1
+/ntuple/scint 1
 
 /ntuple/recordWithCut false
 /ntuple/recordPrimaries false

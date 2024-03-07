@@ -9,52 +9,32 @@
 ################################################################
 
 # values -- lengths in millimeters
+# Updated by J.Seo 29.Jan.2024
 
 rockshell_thickness 1000
-airbuffer_radius 685 #1000
-airbuffer_height 2905 #2645 #2500
+airbuffer_radius 700
+airbuffer_height 2905
 
-lead_shield_thickness 250
+PE_shield_thickness 700 
 lead_housing_thickness 0
+lead_shield_thickness 200
+thin_lead_shield_thickness 50 
+boricacid_thickness 10
 
-boricacid_thickness 10 #15
-
-plastic_scintillator_thickness 15 # plastic scintillator thickness : 1.5 cm
-plastic_veto_thickness 60  # veto panel thickness : 4.5 cm
+plastic_scintillator_thickness 15
+plastic_veto_thickness 61  # veto panel thickness : 4.5 cm
 plastic_veto_width 310 # veto panel width     : 30 cm 
 al_plate_thickness 0.3
 
-#veto_frame_thickness 0.3    
-#veto_frame_space 0.5
-#veto_frame_wiregap 100
-
-#plastic_scint_thickness 30 # ideal plastic scintillator case
-#plastic_veto_barrel_x 22.5  # veto panel thickness : 4.5 cm
-
-PE_shield_thickness 700 
-copper_shield_thickness 20
-BPE_shield_thickness 25  #30
-
-#plastic_Ishield_thickness 700 
-#copper_shield_thickness 20
-#Bplastic_Ishield_thickness 25  #30
-
 nShield_hatWallThickness 700
-nShield_hatGapFromLead 300 #2000
+nShield_hatGapFromLead 300 
+nShield_GapFromCeiling 40
 
-plastic_Oshield_thickness 0  #700
 cavern_sphere_radius    12000
-rock_shell_radius    		23000 #15000     # min thickness of rock around cavern
+rock_shell_radius    	25000 #15000     # min thickness of rock around cavern
 
 Cu1Gap 15
 Cu2Gap 15
 Cu3Gap 15
 Cu4Gap 15
 TRGap 100 #50
-
-Cu1RadiusGap 30
-Cu2RadiusGap 24
-Cu3RadiusGap 32
-Cu4RadiusGap 30
-SSRadiusGap 31.5
-

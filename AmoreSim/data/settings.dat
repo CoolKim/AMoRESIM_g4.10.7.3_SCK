@@ -11,6 +11,7 @@
 ################################################################
 omit_muon_processes      1.0    # non-zero causes muon processes to be skipped
 omit_hadronic_processes  1.0    # non-zero causes neutron, etc., to be skipped
+omit_neutron_hp 0.0
 
 ################################################################
 # Note: the following geometry parameters should only be changed immediately

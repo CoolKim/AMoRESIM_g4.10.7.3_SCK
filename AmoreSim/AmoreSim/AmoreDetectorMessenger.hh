@@ -33,7 +33,6 @@ class AmoreDetectorMessenger : public G4UImessenger {
     G4UIcommand *DetGeometrySelectCmd;
 
     // For AMoRE 2
-    G4UIcommand *VetoGeometrySelectCmd;
 		G4UIcommand *AMoRE200PhaseSelectCmd;
 		G4UIcommand *HatSizeSelectCmd;
     G4UIcommand *CavernTypeSelectCmd;

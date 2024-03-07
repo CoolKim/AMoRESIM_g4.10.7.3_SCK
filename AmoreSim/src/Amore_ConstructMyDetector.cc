@@ -6,6 +6,7 @@
 #include "globals.hh"
 
 #include "AmoreSim/AmoreDetectorConstruction.hh" // the DetectorConstruction class header
+#include "AmoreSim/AmoreDetectorStaticInfo.hh"
 #include "CupSim/CupBoxSD.hh"                    // for making sensitive boxes
 #include "CupSim/CupPMTOpticalModel.hh"          // for same PMT optical model as main sim
 #include "CupSim/CupPMTSD.hh"                    // for making sensitive photocathodes
@@ -81,21 +82,34 @@ void AmoreDetectorConstruction::ConstructMyDetector() {
 		G4double LMOCell_half_height = 50. * mm / 2.;
 
 		G4Tubs *LMOCell = new G4Tubs("LMOCell",0, LMOCell_radius, LMOCell_half_height, 0, 360.);
-		G4LogicalVolume *LMOCell_LV = new G4LogicalVolume(LMOCell, _Li2MoO4, "LMOCell_lv");
+		//G4LogicalVolume *LMOCell_LV = new G4LogicalVolume(LMOCell, _Li2MoO4, "LMOCell_lv");
+		fMyDetector_LMOCell_LV = new G4LogicalVolume(LMOCell, _Li2MoO4, "LMOCell_lv");
 
 		G4Colour yellow(1.0, 1.0, 0.0);
 		G4VisAttributes *LMOCell_Vis = new G4VisAttributes(yellow);
 		LMOCell_Vis->SetForceSolid(true);
 
-		new G4PVPlacement(nullptr, {0,0,0}, LMOCell_LV, "LMOCell_PV", logiHall, false, 0, false);
+		new G4PVPlacement(nullptr, {0,0,0}, fMyDetector_LMOCell_LV, "LMOCell_PV", logiHall, false, 0, false);
 
     // the class variable "world_phys" must be set to the world phys volume.
     world_phys = physHall;
 
+#if G4VERSION_NUMBER < 1000
+    ConstructMyDetector_SDandField();
+#endif
+
+}
+
+void AmoreDetectorConstruction::ConstructMyDetector_SDandField(){
+
     CupScintSD *TGSD;
     G4SDManager *SDman = G4SDManager::GetSDMpointer();
     G4String SDname;
-    TGSD = new CupScintSD(SDname = "/CupDet/TGSD", 1);
+
+		TGSD= new CupScintSD(SDname = "/CupDet/TGSD", 1);
     SDman->AddNewDetector(TGSD);
-    LMOCell_LV->SetSensitiveDetector(TGSD);
+    fMyDetector_LMOCell_LV->SetSensitiveDetector(TGSD);
+
+		G4Region *crystalRegion = new G4Region("crystals");
+		crystalRegion->AddRootLogicalVolume(fMyDetector_LMOCell_LV);
 }
