@@ -1,8 +1,5 @@
 #!/bin/bash -f
 
-#source /opt/local/libexec/root6/bin/thisroot.sh
-#source /Users/clara/Software/Geant4/install/v10.05.p01/include/Geant4/../../bin/geant4.sh
-#workdir="/Users/clara/Work/build_sim"
 source @ROOT_BINARY_DIR@/thisroot.sh
 source @Geant4_INCLUDE_DIR@/../../bin/geant4.sh
 workdir="@AMORESIM_WORK_DIR@"
@@ -40,13 +37,10 @@ export AmoreDATA=$workdir"/AmoreSim/data"
 setup="CMO"
 
 # run name
-jobname="internal-bulk"
+jobname="scratch"
 
 # source name
 # REFERENCE for source name #
-# part_name (U238 Th232 K40 U235 Pb210 Na22 I125 I126 Te121 Te121m Te123m Te125m Te127m H3)
-# part_name (Ac227 Pb210 Na22 I125 I126 Te121 Te121m Te123m Te125m Te127m H3)
-# part_name (Rn222)
 part_name=(U238 Th232 K40 U235 Pb210 Na22 I125 I126 Te121 Te121m Te123m Te125m Te127m H3)
 
 # for meta stable state
@@ -66,15 +60,11 @@ fi
 
 # decay rate = ln2/half_life (in Hz)
 # REFERENCE for decay rate
-# decay_rate (4.9E-18 1.6E-18 1.8E-17 3.1E-17 1E-9 8.5E-9 1.4E-7 6.2E-7 4.2E-7 4.9E-8 6.7E-8 1.4E-7 7.6E-8 1.8E-9)
-# decay_rate (3.1E-17 1E-9 8.5E-9 1.4E-7 6.2E-7 4.2E-7 4.9E-8 6.7E-8 1.4E-7 7.6E-8 1.8E-9)
-#decay_rate=(4.9E-18 1.6E-18 1.8E-17 3.1E-17 1E-9 8.5E-9 1.4E-7 6.2E-7 4.2E-7 4.9E-8 6.7E-8 1.4E-7 7.6E-8 1.8E-9)
+decay_rate=(4.9E-18 1.6E-18 1.8E-17 3.1E-17 1E-9 8.5E-9 1.4E-7 6.2E-7 4.2E-7 4.9E-8 6.7E-8 1.4E-7 7.6E-8 1.8E-9)
 
 
 # source category
 # REFERENCE for source category
-# srcpos=internal
-# srcpos=external-pmt
 srcpos=internal
 
 # event window: 10us(=10000 ns) for KIMS-NaI, 100ms(=1E8 ns) for AMoRE-pilot

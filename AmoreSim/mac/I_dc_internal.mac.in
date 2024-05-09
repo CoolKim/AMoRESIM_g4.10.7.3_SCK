@@ -15,10 +15,6 @@
 /detGeometry/select amoreI
 /detGeometry/NeutronMode false
 
-/detGeometry/AdditionalPE true
-/detGeometry/200/selectVeto WithBeam
-/detGeometry/200/selectCavern ToyHemiSphere
-
 /detGeometry/Pilot/EnableMumetal false
 /detGeometry/Pilot/EnableTargetRoom true
 
